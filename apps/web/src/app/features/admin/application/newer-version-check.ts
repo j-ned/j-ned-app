@@ -67,7 +67,10 @@ export class NewerVersionCheck {
       computation: (source, previous) => {
         if (!previous || source.dirty) return false;
         if (source.edited === previous.source.edited) return previous.value;
-        return sameEdited(source.reloadedFrom, previous.source.edited);
+        // Sans rechargement demandé, `null` égale le `null` d'avant le premier chargement.
+        return (
+          source.reloadedFrom !== null && sameEdited(source.reloadedFrom, previous.source.edited)
+        );
       },
     });
     refreshAdminWhenVisible(() => this.check());

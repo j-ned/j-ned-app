@@ -232,6 +232,24 @@ describe('AdminPostEditor: chargement, erreur et introuvable', () => {
   });
 });
 
+describe('AdminPostEditor: article supprimé', () => {
+  it('Given an article gone from the API When /admin/blog/b-1 is opened Then the editor says so instead of a form', async () => {
+    const editor = await openEditor('/admin/blog/b-1', {
+      getAdminPost: vi.fn((): Observable<BlogPost | null> => of(null)),
+    });
+
+    expect({
+      crash: editor.crash,
+      missing: testIdText(editor.host, 'admin-post-editor-missing'),
+      form: byTestId(editor.host, 'admin-post-title'),
+    }).toEqual({
+      crash: null,
+      missing: "Cet article n'existe pas ou a été supprimé.",
+      form: null,
+    });
+  });
+});
+
 describe('AdminPostEditor: enregistrer', () => {
   it('Given an empty new article When « Enregistrer » is pressed Then nothing is created', async () => {
     const editor = await openEditor('/admin/blog/new');
@@ -854,6 +872,23 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
   }
 
   const reloads = (editor: Editor): number => editor.getAdminPost.mock.calls.length - 1;
+
+  it('Given the article answering after the editor opened When it fills the form Then the status region says nothing', async () => {
+    const answer = new Subject<BlogPost | null>();
+    const editor = await openEditor('/admin/blog/b-1', { getAdminPost: vi.fn(() => answer) });
+
+    answer.next(CHIFFREMENT);
+    answer.complete();
+    await settleBounded(editor.fixture);
+
+    expect({
+      field: fieldValue(editor.host, 'admin-post-title'),
+      notice: readNewerVersion(editor, PREFIX),
+    }).toEqual({
+      field: 'Chiffrement côté client',
+      notice: { role: 'status', text: '', focused: false },
+    });
+  });
 
   it('Given an article saved elsewhere since it was opened When the admin returns to the tab Then a status says so, the draft and the focus stay', async () => {
     const editor = await openEditor('/admin/blog/b-1', {
