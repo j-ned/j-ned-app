@@ -1,6 +1,8 @@
 import { type SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { AnalyticsStatsService } from './analytics-stats.service';
+import { defined } from '../testing/defined';
+import { asDatabase } from '../testing/mock-database';
 import { createMockDb } from '../testing/test-utils';
 import * as aggregates from './analytics-aggregates';
 import type { DayAggregates } from './analytics-aggregates';
@@ -60,7 +62,7 @@ describe('AnalyticsStatsService', () => {
 
   beforeEach(() => {
     db = createMockDb();
-    service = new AnalyticsStatsService(db as never);
+    service = new AnalyticsStatsService(asDatabase(db));
     jest.useFakeTimers().setSystemTime(new Date('2026-04-26T12:00:00Z'));
   });
 
@@ -305,7 +307,7 @@ describe('AnalyticsStatsService', () => {
 
       expect(result).toEqual(rows);
       expect(db.select).not.toHaveBeenCalled();
-      const [statement] = db.execute.mock.calls[0] as [unknown];
+      const [statement] = defined(db.execute.mock.calls[0]);
       const query = render(statement);
       expect(query.sql).toMatch(/GROUP BY\s+"page_view"."session_hash"/);
       expect(query.sql).toContain('COALESCE(');
@@ -328,7 +330,7 @@ describe('AnalyticsStatsService', () => {
 
         expect(result).toEqual(rows);
         expect(db.limit).toHaveBeenCalledWith(5);
-        const [condition] = db.where.mock.calls[0] as [unknown];
+        const [condition] = defined(db.where.mock.calls[0]);
         expect(render(condition).params).toContain(type);
       },
     );
