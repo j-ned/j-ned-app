@@ -52,9 +52,15 @@ export class BlogService {
 
   constructor(
     private readonly db: Database,
-    private readonly storage: StorageService,
-    private readonly images: ImageOptimizer,
-    private readonly contentImages: BlogContentImagesService,
+    private readonly storage: Pick<
+      StorageService,
+      'upload' | 'delete' | 'getPublicUrl'
+    >,
+    private readonly images: Pick<ImageOptimizer, 'optimize'>,
+    private readonly contentImages: Pick<
+      BlogContentImagesService,
+      'removeUnreferenced'
+    >,
   ) {}
 
   async findAllPublished(): Promise<BlogPostResponse[]> {

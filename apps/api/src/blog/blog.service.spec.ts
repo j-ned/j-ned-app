@@ -6,8 +6,9 @@ import {
 import { Logger } from '../common/logger';
 import { and, eq } from 'drizzle-orm';
 import { BlogService } from './blog.service';
+import { asDatabase } from '../testing/mock-database';
 import { createMockDb } from '../testing/test-utils';
-import { StorageService } from '../storage/storage.service';
+import type { StorageService } from '../storage/storage.service';
 import {
   blogPosts,
   type BlogPost,
@@ -18,7 +19,9 @@ import { defined } from '../testing/defined';
 describe('BlogService', () => {
   let service: BlogService;
   let db: ReturnType<typeof createMockDb>;
-  let storage: jest.Mocked<StorageService>;
+  let storage: jest.Mocked<
+    Pick<StorageService, 'upload' | 'delete' | 'getPublicUrl'>
+  >;
   let contentImages: { removeUnreferenced: jest.Mock };
 
   const mkPost = (overrides: Partial<BlogPost> = {}): BlogPost => ({
@@ -42,11 +45,9 @@ describe('BlogService', () => {
     db = createMockDb();
     storage = {
       upload: jest.fn().mockResolvedValue(undefined),
-      get: jest.fn(),
       delete: jest.fn().mockResolvedValue(undefined),
-      list: jest.fn(),
       getPublicUrl: jest.fn().mockReturnValue('https://example.test/url'),
-    } as unknown as jest.Mocked<StorageService>;
+    };
     contentImages = {
       removeUnreferenced: jest.fn().mockResolvedValue(undefined),
     };
@@ -60,12 +61,7 @@ describe('BlogService', () => {
         height: 900,
       }),
     };
-    service = new BlogService(
-      db as never,
-      storage,
-      images as never,
-      contentImages as never,
-    );
+    service = new BlogService(asDatabase(db), storage, images, contentImages);
   });
 
   describe('findBySlug', () => {

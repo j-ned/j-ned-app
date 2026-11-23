@@ -7,10 +7,9 @@ import {
 } from '../common/http-errors';
 import { ADMIN_READ_THROTTLE, PUBLIC_READ_THROTTLE } from '../common/throttle';
 import { testApp } from '../testing/test-app';
-import type { BlogContentImagesService } from './blog-content-images.service';
 import { blogRoutes } from './blog.routes';
-import type { BlogService } from './blog.service';
 import { fileForm } from '../testing/multipart';
+import { notStubbed } from '../testing/stub';
 import { denyAll, passThrough } from '../testing/require-auth';
 import { BlogCommentsService } from '../blog-comments/blog-comments.service';
 import { MemoryCommentStore } from '../testing/memory-comment-store';
@@ -49,8 +48,8 @@ describe('blog routes (HTTP)', () => {
     testApp(
       '/api/blog',
       blogRoutes(
-        blog as unknown as BlogService,
-        {} as BlogContentImagesService,
+        blog,
+        { upload: notStubbed('upload') },
         new BlogCommentsService(
           new MemoryCommentStore(),
           { sendMail: () => Promise.resolve() },
