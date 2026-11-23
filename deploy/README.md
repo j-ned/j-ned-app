@@ -27,13 +27,18 @@ ne construit rien ; il tire les images publiées sur GHCR par la CI (`j-ned-app-
    création du rôle Postgres de l'API ([postgres/README.md](postgres/README.md), étapes 1 et 2).
 7. **Déclenchement par la CI** : l'interrupteur _Autodeploy_ de Dokploy ne sert pas ici (il
    partirait avant la publication des images). C'est le workflow `Deploy` qui appelle Dokploy une fois
-   les images publiées, après avoir validé `compose.yaml` (`deploy/compose.check.sh`). Secrets du dépôt : `DOKPLOY_URL` (adresse du panneau, sans `/`
+   les images publiées, après avoir validé `compose.yaml` (`deploy/compose.check.sh`, joué aussi dès la PR
+   par le workflow `Deploy checks`). Secrets du dépôt : `DOKPLOY_URL` (adresse du panneau, sans `/`
    final), `DOKPLOY_API_KEY` (profil → API) et `DOKPLOY_COMPOSE_ID` (dernier segment de l'URL du
    service). Le panneau étant derrière Cloudflare Access, il faut aussi un jeton de service (Zero
    Trust → Service Tokens), autorisé par une règle **Service Auth** sur l'application du panneau, dans
    `CF_ACCESS_CLIENT_ID` et `CF_ACCESS_CLIENT_SECRET`. Variable facultative `DEPLOY_HEALTH_URL`
-   (`https://…/healthz`) pour sonder le site après coup. Tant que les secrets Dokploy manquent, le
-   workflow ne fait rien ; une fois posés, une redirection ou un refus le font échouer.
+   (`https://…/healthz`) pour sonder le site après coup ; après une publication de l'API, le workflow
+   attend aussi que `/api/health`, sur la même origine, annonce la release publiée (`sha-<commit>`,
+   `deploy/probe-release.sh`), faute de quoi il échoue : l'ancienne image répond encore. Le site
+   n'annonce pas sa version : pour lui, la sonde dit seulement qu'il répond. Tant que les secrets
+   Dokploy manquent, le workflow ne fait rien ; une fois posés, une redirection ou un refus le font
+   échouer.
 
 ## Import de données depuis une autre base
 

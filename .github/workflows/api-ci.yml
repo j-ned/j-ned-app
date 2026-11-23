@@ -2,7 +2,7 @@ name: API CI
 
 # Sur une PR : lint, types, tests sur Postgres, build, puis l'API construite, lancée par Node en mode
 # production, passe la suite de parité HTTP (packages/api-parity). En parallèle, l'image du conteneur
-# (ADR-0038) est construite, ses migrations jouées sur un Postgres jetable, sa sonde interrogée et le rôle
+# est construite, ses migrations jouées sur un Postgres jetable, sa sonde interrogée et le rôle
 # Postgres applicatif (deploy/postgres) jugé devant elle ; sur master, elle est publiée sur GHCR, puis le
 # workflow `Deploy` demande à Dokploy de la tirer.
 on:
@@ -36,10 +36,13 @@ on:
 permissions:
   contents: read
 
-# Un run par branche/PR : le nouveau push annule le précédent.
+# Un run par branche/PR. Sur une PR, le nouveau push annule le précédent. Sur master, le run en cours
+# va au bout : son image `sha-<commit>` est une cible de retour arrière, et les runs restent dans
+# l'ordre des fusions pour que `latest` ne recule pas. GitHub ne garde qu'un run en attente par
+# groupe : lors d'une rafale de trois fusions, celle du milieu n'est pas construite.
 concurrency:
   group: api-ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   verify:

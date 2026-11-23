@@ -1,8 +1,9 @@
 # syntax=docker/dockerfile:1.7
 
 # Sauvegarde de la base : mêmes outils clients que le serveur (postgres:17), curl pour l'envoi signé
-# vers le bucket, gpg pour le chiffrement. Contexte de build : ce dossier.
-FROM postgres:17-alpine
+# vers le bucket, gpg pour le chiffrement. Contexte de build : ce dossier. Mineure épinglée comme
+# celle de la base (`deploy/compose.yaml`), que Dependabot monte avec elle.
+FROM postgres:17.12-alpine
 
 RUN apk add --no-cache curl gnupg
 

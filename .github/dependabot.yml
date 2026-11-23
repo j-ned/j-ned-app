@@ -52,6 +52,7 @@ updates:
     directories:
       - /apps/api
       - /apps/web
+      - /deploy/backup
     schedule:
       interval: weekly
       day: monday
@@ -62,4 +63,25 @@ updates:
     ignore:
       # Le majeur de Node se change à la main, avec `engines`, `.nvmrc` et `@types/node`.
       - dependency-name: node
+        update-types: ["version-update:semver-major"]
+      # Les outils clients de la sauvegarde suivent la majeure du serveur (`deploy/compose.yaml`).
+      - dependency-name: postgres
+        update-types: ["version-update:semver-major"]
+
+  # Images tierces de la pile de production. Celles du projet (GHCR, tag `latest` ou `sha-<commit>`)
+  # sont fixées par la CI et le déploiement, pas par Dependabot.
+  - package-ecosystem: docker-compose
+    directory: /deploy
+    schedule:
+      interval: weekly
+      day: monday
+      time: "06:00"
+      timezone: Europe/Paris
+    commit-message:
+      prefix: chore(docker)
+    ignore:
+      - dependency-name: "j-ned/*"
+      # La majeure de Postgres se monte à la main : `pg_upgrade` ou dump restauré, outils de la
+      # sauvegarde (`deploy/backup/Dockerfile`) dans le même changement.
+      - dependency-name: postgres
         update-types: ["version-update:semver-major"]
