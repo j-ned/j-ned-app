@@ -3,7 +3,6 @@ import { ContactService } from './contact.service';
 import { asDatabase } from '../testing/mock-database';
 import { createMockDb } from '../testing/test-utils';
 import type { MailSender } from '../mailer/mail-transport';
-import { stubFn, type Stub } from '../testing/stub';
 import { createTestConfig } from '../testing/test-config';
 import { contactMessages, type ContactMessage } from '../database/schema';
 import { defined } from '../testing/defined';
@@ -11,7 +10,7 @@ import { defined } from '../testing/defined';
 describe('ContactService', () => {
   let service: ContactService;
   let db: ReturnType<typeof createMockDb>;
-  let mailer: Stub<MailSender>;
+  let mailer: jest.Mocked<Pick<MailSender, 'sendMail'>>;
 
   const mkMessage = (
     overrides: Partial<ContactMessage> = {},
@@ -30,8 +29,7 @@ describe('ContactService', () => {
 
   beforeEach(() => {
     db = createMockDb();
-    mailer = { sendMail: stubFn<MailSender['sendMail']>() };
-    mailer.sendMail.mockResolvedValue(undefined);
+    mailer = { sendMail: jest.fn().mockResolvedValue(undefined) };
 
     service = new ContactService(asDatabase(db), mailer, createTestConfig());
   });

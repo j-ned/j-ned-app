@@ -1,11 +1,10 @@
 import { testApp } from '../testing/test-app';
-import type { AppConfigService } from '../config/app-config.service';
 import { TooManyRequestsException } from '../common/http-errors';
 import { authRoutes } from './auth.routes';
-import type { AuthService } from './auth.service';
-import type { LoginJournalService } from './login-journal.service';
 import type { RequireAuth } from './require-auth';
 import { denyAll, passThrough } from '../testing/require-auth';
+import { notStubbed } from '../testing/stub';
+import { createTestConfig } from '../testing/test-config';
 
 // Routes montées sous leur préfixe avec le gestionnaire d'erreurs de l'API ; services et JWT remplacés.
 describe('auth routes', () => {
@@ -14,16 +13,19 @@ describe('auth routes', () => {
     verifyTwoFactor: jest.fn(),
     changePassword: jest.fn(),
     disableTwoFactor: jest.fn(),
+    revokeSessionFromToken: notStubbed('revokeSessionFromToken'),
+    generateTwoFactorSecret: notStubbed('generateTwoFactorSecret'),
+    enableTwoFactor: notStubbed('enableTwoFactor'),
   };
   const journal = { findAll: jest.fn() };
   const build = (requireAuth: RequireAuth) =>
     testApp(
       '/api/auth',
       authRoutes({
-        auth: auth as unknown as AuthService,
-        config: { jwtExpiresIn: '7d' } as unknown as AppConfigService,
+        auth,
+        config: createTestConfig({ JWT_EXPIRES_IN: '7d' }),
         requireAuth,
-        journal: journal as unknown as LoginJournalService,
+        journal,
       }),
     );
   const app = build(passThrough);

@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import {
   UnauthorizedException,
   BadRequestException,
@@ -10,20 +9,22 @@ import {
   SESSION_AUDIENCE,
   type JwtService,
 } from './jwt.service';
-import { AuthService } from './auth.service';
-import { UsersService } from '../users/users.service';
-import { PasswordService } from './password.service';
-import { TwoFactorService } from './two-factor.service';
+import {
+  AuthService,
+  type AuthTwoFactor,
+  type AuthUsers,
+} from './auth.service';
+import type { PasswordService } from './password.service';
 import type { LoginJournalService, LoginOrigin } from './login-journal.service';
 import type { User } from '../database/schema';
 
 describe('AuthService', () => {
   let service: AuthService;
-  let users: jest.Mocked<UsersService>;
-  let password: jest.Mocked<PasswordService>;
-  let twoFactor: jest.Mocked<TwoFactorService>;
-  let jwt: jest.Mocked<JwtService>;
-  let journal: { record: jest.Mock };
+  let users: jest.Mocked<AuthUsers>;
+  let password: jest.Mocked<Pick<PasswordService, 'hash' | 'verify'>>;
+  let twoFactor: jest.Mocked<AuthTwoFactor>;
+  let jwt: jest.Mocked<Pick<JwtService, 'sign' | 'verify'>>;
+  let journal: jest.Mocked<Pick<LoginJournalService, 'record'>>;
   let now: number;
 
   const ORIGIN: LoginOrigin = { userAgent: 'Mozilla/5.0 test', country: 'FR' };
@@ -53,7 +54,7 @@ describe('AuthService', () => {
       disableTwoFactor: jest.fn(),
       consumeBackupCode: jest.fn(),
       revokeSessions: jest.fn(),
-    } as unknown as jest.Mocked<UsersService>;
+    };
     password = {
       hash: jest.fn(),
       verify: jest.fn(),
@@ -65,18 +66,18 @@ describe('AuthService', () => {
       generateBackupCodes: jest.fn(),
       hashBackupCodes: jest.fn(),
       findMatchingBackupCode: jest.fn(),
-    } as unknown as jest.Mocked<TwoFactorService>;
+    };
     jwt = {
       sign: jest.fn(),
       verify: jest.fn(),
-    } as unknown as jest.Mocked<JwtService>;
+    };
     journal = { record: jest.fn().mockResolvedValue(undefined) };
     service = new AuthService(
       users,
       password,
       twoFactor,
       jwt,
-      journal as unknown as LoginJournalService,
+      journal,
       () => now,
     );
   });

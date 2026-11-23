@@ -40,15 +40,37 @@ function publicUser(u: User): PublicUser {
 // Un code TOTP vaut 30 s ; 90 s couvrent sa fenêtre et un décalage d'horloge.
 const TOTP_REPLAY_WINDOW_MS = 90_000;
 
+// Les seules opérations dont l'authentification a besoin : un test les double sans le reste.
+export type AuthUsers = Pick<
+  UsersService,
+  | 'findById'
+  | 'findByEmail'
+  | 'updatePassword'
+  | 'updateTwoFactorSecret'
+  | 'enableTwoFactor'
+  | 'disableTwoFactor'
+  | 'consumeBackupCode'
+  | 'revokeSessions'
+>;
+export type AuthTwoFactor = Pick<
+  TwoFactorService,
+  | 'generateSecret'
+  | 'generateQrCodeDataUrl'
+  | 'verifyTotpCode'
+  | 'generateBackupCodes'
+  | 'hashBackupCodes'
+  | 'findMatchingBackupCode'
+>;
+
 export class AuthService {
   private decoyHash?: Promise<string>;
 
   constructor(
-    private readonly users: UsersService,
+    private readonly users: AuthUsers,
     private readonly password: PasswordService,
-    private readonly twoFactor: TwoFactorService,
-    private readonly jwt: JwtService,
-    private readonly journal: LoginJournalService,
+    private readonly twoFactor: AuthTwoFactor,
+    private readonly jwt: Pick<JwtService, 'sign' | 'verify'>,
+    private readonly journal: Pick<LoginJournalService, 'record'>,
     private readonly now: () => number = Date.now,
   ) {}
 
