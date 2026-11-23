@@ -91,6 +91,31 @@ describe('scrubEvent', () => {
 
     expect(scrubEvent(event)).toEqual({ type: undefined, request: undefined });
   });
+
+  it('given a server request with a query string field and proxy credentials, when scrubbed, then they are dropped', () => {
+    const scrubbed = scrubEvent(
+      anEvent({
+        url: '/blog/article?token=x',
+        query_string: 'token=x',
+        headers: {
+          'Proxy-Authorization': 'Basic t',
+          'set-cookie': 'session=s',
+          'user-agent': 'ua',
+        },
+      }),
+    );
+
+    expect(scrubbed.request).toEqual({ url: '/blog/article', headers: { 'user-agent': 'ua' } });
+  });
+
+  it('given a user carrying an IP address, when scrubbed, then the address is dropped and the rest kept', () => {
+    const scrubbed = scrubEvent({
+      type: undefined,
+      user: { id: 'u-1', ip_address: '203.0.113.7' },
+    });
+
+    expect(scrubbed.user).toEqual({ id: 'u-1' });
+  });
 });
 
 describe('scrubEvent stack frames', () => {
@@ -125,6 +150,29 @@ describe('scrubEvent stack frames', () => {
     ]);
     expect(JSON.stringify(scrubEvent(event))).not.toContain('AbCdEf');
   });
+
+  it.each([
+    [
+      'Http failure response for https://nedellec-julien.fr/api/blog?token=x&email=a@b.c: 500',
+      'Http failure response for https://nedellec-julien.fr/api/blog: 500',
+    ],
+    ['/blog/posts?include=content answered 502', '/blog/posts answered 502'],
+    [
+      'Cannot match any routes. URL Segment: /blog#jeton',
+      'Cannot match any routes. URL Segment: /blog',
+    ],
+    ['Why is this undefined? see docs', 'Why is this undefined? see docs'],
+  ])(
+    'given the exception text %j, when scrubbed, then URL queries and fragments are dropped',
+    (value, expected) => {
+      const scrubbed = scrubEvent({
+        type: undefined,
+        exception: { values: [{ type: 'Error', value }] },
+      });
+
+      expect(scrubbed.exception?.values?.[0]?.value).toBe(expected);
+    },
+  );
 
   it('given an exception without stack trace, when scrubbed, then it is kept as is', () => {
     const event: ErrorEvent = {

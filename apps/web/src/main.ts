@@ -4,31 +4,28 @@ import { Router } from '@angular/router';
 import { appConfig } from './app/app.config';
 import { App } from './app/app';
 import { Monitoring } from './app/core/monitoring/monitoring';
+import { toBrowserSentryConfig } from './app/core/monitoring/browser-sentry-config';
 import { scrubBreadcrumb, scrubEvent, scrubSpan } from './app/core/monitoring/scrub-event';
 
-type RuntimeConfig = {
-  sentry: {
-    dsn: string;
-    environment: string;
-    release: string;
-  };
-};
+// Release du site (`sha-<commit>`), fixée au build par `define` (angular.json, Dockerfile) ; vide hors image.
+declare const APP_RELEASE: string;
 
 // Même origine partout : relais `/api` de nginx en production, `proxy.conf.cjs` sous `ng serve`.
 const API_BASE = '/api';
 
 async function initSentryFromBackend(appRef: Promise<ApplicationRef>): Promise<void> {
-  let config: RuntimeConfig;
+  let raw: unknown;
   try {
     const res = await fetch(`${API_BASE}/config`, { credentials: 'omit' });
     if (!res.ok) return;
-    config = (await res.json()) as RuntimeConfig;
+    raw = await res.json();
   } catch {
     return;
   }
 
-  const { dsn, environment, release } = config.sentry;
-  if (!dsn) return;
+  const config = toBrowserSentryConfig(raw, APP_RELEASE);
+  if (!config) return;
+  const { dsn, environment } = config;
 
   const isProduction = environment === 'production';
   const sentry = await import('./app/core/monitoring/sentry-sdk');
@@ -36,7 +33,7 @@ async function initSentryFromBackend(appRef: Promise<ApplicationRef>): Promise<v
   sentry.init({
     dsn,
     environment,
-    release,
+    ...(config.release && { release: config.release }),
     // Un champ omis vaut « tout collecter » depuis la v11 : chaque catégorie est fermée explicitement.
     dataCollection: {
       userInfo: false,

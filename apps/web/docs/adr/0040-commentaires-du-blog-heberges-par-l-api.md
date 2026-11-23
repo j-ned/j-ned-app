@@ -1,6 +1,7 @@
 # ADR-0040 — Commentaires du blog hébergés par l'API, modérés avant publication
 
-- **Statut** : proposé (2026-11-21)
+- **Statut** : accepté et appliqué (2026-11-22) : API (PR #68), modération (PR #69), puis page
+  publique (PR #70)
 - **Date** : 2026-11-21
 - **Spec** : 040 (commentaires du blog sans compte tiers)
 - **Remplace** : les commentaires Giscus (composant `BlogComments`, `GISCUS_CONFIG`, origines

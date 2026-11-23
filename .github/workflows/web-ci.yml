@@ -111,6 +111,9 @@ jobs:
           file: apps/web/Dockerfile
           push: false
           load: true
+          # Même release que la publication : ses couches viennent alors toutes de ce cache.
+          build-args: |
+            APP_RELEASE=sha-${{ github.sha }}
           tags: j-ned-app-web:ci
           cache-from: type=gha,scope=web
           cache-to: type=gha,mode=max,scope=web
@@ -163,6 +166,8 @@ jobs:
           context: .
           file: apps/web/Dockerfile
           push: true
+          build-args: |
+            APP_RELEASE=sha-${{ github.sha }}
           tags: |
             ghcr.io/${{ github.repository_owner }}/j-ned-app-web:latest
             ghcr.io/${{ github.repository_owner }}/j-ned-app-web:sha-${{ github.sha }}

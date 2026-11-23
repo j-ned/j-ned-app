@@ -145,6 +145,9 @@ importers:
       '@sentry/angular':
         specifier: ^11.16.0
         version: 11.16.0(@angular/common@22.3.0(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(@angular/router@22.3.0(@angular/common@22.3.0(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(@angular/platform-browser@22.3.0(@angular/common@22.3.0(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@22.3.0(@angular/compiler@22.3.0)(rxjs@7.8.2)))(rxjs@7.8.2))(rxjs@7.8.2)
+      '@sentry/node':
+        specifier: 11.16.0
+        version: 11.16.0(rollup@4.61.0)(webpack@5.106.0(esbuild@0.28.2)(postcss@8.5.33))
       highlight.js:
         specifier: 11.12.0
         version: 11.12.0
@@ -8522,6 +8525,18 @@ snapshots:
       '@sentry/replay': 11.16.0
       '@sentry/replay-canvas': 11.16.0
 
+  '@sentry/bundler-plugins@11.16.0(rollup@4.61.0)(webpack@5.106.0(esbuild@0.28.2)(postcss@8.5.33))':
+    dependencies:
+      '@sentry/core': 11.16.0
+      dotenv: 17.4.2
+      glob: 14.0.6
+      magic-string: 1.4.5
+      oxc-parser: 0.152.0
+      sentry: 0.50.0
+    optionalDependencies:
+      rollup: 4.61.0
+      webpack: 5.106.0(esbuild@0.28.2)(postcss@8.5.33)
+
   '@sentry/bundler-plugins@11.16.0(rollup@4.61.0)(webpack@5.106.0)':
     dependencies:
       '@sentry/core': 11.16.0
@@ -8543,6 +8558,19 @@ snapshots:
   '@sentry/feedback@11.16.0':
     dependencies:
       '@sentry/core': 11.16.0
+
+  '@sentry/node@11.16.0(rollup@4.61.0)(webpack@5.106.0(esbuild@0.28.2)(postcss@8.5.33))':
+    dependencies:
+      '@opentelemetry/api': 1.10.0
+      '@sentry/bundler-plugins': 11.16.0(rollup@4.61.0)(webpack@5.106.0(esbuild@0.28.2)(postcss@8.5.33))
+      '@sentry/conventions': 0.34.0
+      '@sentry/core': 11.16.0
+      '@sentry/opentelemetry': 11.16.0(@opentelemetry/api@1.10.0)
+      '@sentry/server-runtime-injection': 11.16.0
+      '@sentry/server-utils': 11.16.0
+    transitivePeerDependencies:
+      - rollup
+      - webpack
 
   '@sentry/node@11.16.0(rollup@4.61.0)(webpack@5.106.0)':
     dependencies:
@@ -11624,6 +11652,16 @@ snapshots:
     dependencies:
       xmlchars: 2.2.0
 
+  schema-utils@4.8.5(webpack@5.106.0(esbuild@0.28.2)(postcss@8.5.33)):
+    dependencies:
+      '@types/json-schema': 7.0.15
+      ajv: 8.20.0
+      ajv-formats: 3.0.1(ajv@8.20.0)
+      ajv-keywords: 5.1.0(ajv@8.20.0)
+    optionalDependencies:
+      webpack: 5.106.0(esbuild@0.28.2)(postcss@8.5.33)
+    optional: true
+
   schema-utils@4.8.5(webpack@5.106.0):
     dependencies:
       '@types/json-schema': 7.0.15
@@ -11859,6 +11897,18 @@ snapshots:
   tailwindcss@4.3.5: {}
 
   tapable@2.3.4: {}
+
+  terser-webpack-plugin@5.6.1(esbuild@0.28.2)(postcss@8.5.33)(webpack@5.106.0(esbuild@0.28.2)(postcss@8.5.33)):
+    dependencies:
+      '@jridgewell/trace-mapping': 0.3.31
+      jest-worker: 27.5.1
+      schema-utils: 4.8.5(webpack@5.106.0(esbuild@0.28.2)(postcss@8.5.33))
+      terser: 5.51.4
+      webpack: 5.106.0(esbuild@0.28.2)(postcss@8.5.33)
+    optionalDependencies:
+      esbuild: 0.28.2
+      postcss: 8.5.33
+    optional: true
 
   terser-webpack-plugin@5.6.1(webpack@5.106.0):
     dependencies:
@@ -12197,6 +12247,48 @@ snapshots:
       schema-utils: 4.8.5(webpack@5.106.0)
       tapable: 2.3.4
       terser-webpack-plugin: 5.6.1(webpack@5.106.0)
+      watchpack: 2.6.4
+      webpack-sources: 3.7.1
+    transitivePeerDependencies:
+      - '@minify-html/node'
+      - '@swc/core'
+      - '@swc/css'
+      - '@swc/html'
+      - clean-css
+      - cssnano
+      - csso
+      - esbuild
+      - html-minifier-terser
+      - lightningcss
+      - postcss
+      - uglify-js
+    optional: true
+
+  webpack@5.106.0(esbuild@0.28.2)(postcss@8.5.33):
+    dependencies:
+      '@types/eslint-scope': 3.7.7
+      '@types/estree': 1.0.10
+      '@types/json-schema': 7.0.15
+      '@webassemblyjs/ast': 1.14.1
+      '@webassemblyjs/wasm-edit': 1.14.1
+      '@webassemblyjs/wasm-parser': 1.14.1
+      acorn: 8.19.0
+      acorn-import-phases: 1.0.4(acorn@8.19.0)
+      browserslist: 4.29.6
+      chrome-trace-event: 1.0.4
+      enhanced-resolve: 5.27.0
+      es-module-lexer: 2.3.2
+      eslint-scope: 5.1.1
+      events: 3.3.0
+      glob-to-regexp: 0.4.1
+      graceful-fs: 4.2.12
+      json-parse-even-better-errors: 2.3.1
+      loader-runner: 4.3.2
+      mime-types: 2.1.35
+      neo-async: 2.6.2
+      schema-utils: 4.8.5(webpack@5.106.0(esbuild@0.28.2)(postcss@8.5.33))
+      tapable: 2.3.4
+      terser-webpack-plugin: 5.6.1(esbuild@0.28.2)(postcss@8.5.33)(webpack@5.106.0(esbuild@0.28.2)(postcss@8.5.33))
       watchpack: 2.6.4
       webpack-sources: 3.7.1
     transitivePeerDependencies:

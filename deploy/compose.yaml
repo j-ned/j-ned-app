@@ -42,6 +42,8 @@ services:
     environment:
       API_UPSTREAM: http://portfolio-api:3000
       SSR_FORWARD_SECRET: ${SSR_FORWARD_SECRET:?}
+      # Facultative : vide, les erreurs du rendu ne vont qu'au journal du conteneur.
+      SENTRY_SSR_DSN: ${SENTRY_SSR_DSN:-}
     # Configuration générée au démarrage depuis le gabarit (envsubst) et fichier pid de nginx.
     tmpfs:
       - /etc/nginx/conf.d:size=1m
