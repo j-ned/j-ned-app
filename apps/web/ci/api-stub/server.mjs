@@ -110,7 +110,12 @@ async function receiveMessage(req) {
 }
 
 async function readAdmin(pathname, searchParams) {
-  if (pathname === '/api/blog/posts/admin') return [200, await readPosts()];
+  if (pathname === '/api/blog/posts/admin') return [200, (await readPosts()).map(withoutBody)];
+  const adminPost = pathname.match(/^\/api\/blog\/posts\/admin\/([^/]+)$/);
+  if (adminPost) {
+    const found = (await readPosts()).find(bySlugOrId(adminPost[1]));
+    return found ? [200, found] : [404, { message: 'Not Found' }];
+  }
   if (pathname === '/api/contact/messages') {
     return [200, { data: await readMessages() }];
   }
