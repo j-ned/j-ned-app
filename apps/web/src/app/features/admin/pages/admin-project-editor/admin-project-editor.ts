@@ -3,89 +3,30 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import { Router, RouterLink } from '@angular/router';
 import { firstValueFrom, map, type Observable } from 'rxjs';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
-import type {
-  Project,
-  ProjectImage,
-  ProjectInput,
-} from '@features/projects/domain/models/project.model';
-import { withValidationDetail } from '@shared/api/with-validation-detail';
-import { uploadFailureMessage } from '@features/admin/application/upload-failure-message';
+import type { ProjectImage, ProjectInput } from '@features/projects/domain/models/project.model';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { loadState, resourceValueOr } from '@shared/ui/load-state';
 import { ToastStore } from '@core/notifications/toast-store';
-import {
-  AdminEditorFrame,
-  type AdminEditorCopy,
-} from '../../application/components/admin-editor-frame';
-import { AdminEmptyState } from '../../application/components/admin-empty-state';
-import { AdminFormSection } from '../../application/components/admin-form-section';
+import { AdminEditorFrame } from '../../application/components/admin-editor-frame';
 import { AdminFormToc } from '../../application/components/admin-form-toc';
 import { AdminPageHeader } from '../../application/components/admin-page-header';
 import { AdminProjectForm } from '../../application/components/admin-project-form';
-import { AdminProjectGallery } from '../../application/components/admin-project-gallery';
+import { AdminProjectGallerySection } from '../../application/components/admin-project-gallery-section';
 import { AdminProjectPreview } from '../../application/components/admin-project-preview';
 import { AdminSaveBar } from '../../application/components/admin-save-bar';
-import { EditorDraft, type EditedDraft } from '../../application/editor-draft';
+import { EditorDraft } from '../../application/editor-draft';
+import { KnownVersion } from '../../application/known-version';
 import { NewerVersionCheck, type EditedVersion } from '../../application/newer-version-check';
-import type { FormTocSection } from '../../application/form-toc-entries';
-import {
-  toPreviewProject,
-  toProjectDraft,
-  type ProjectDraft,
-} from '../../application/project-draft';
+import { toPreviewProject, toProjectDraft } from '../../application/project-draft';
 import { isStaleVersion } from '../../application/is-stale-version';
-import { isTitleTaken } from '../../application/is-title-taken';
 import type { LeaveConfirmable } from '../../application/unsaved-changes-guard';
-
-const FORM_SECTIONS: readonly FormTocSection<EditedDraft<ProjectDraft>>[] = [
-  {
-    id: 'project-identity',
-    label: '01 · Identité',
-    fields: ['title', 'category', 'kind', 'order', 'featured'],
-  },
-  {
-    id: 'project-presentation',
-    label: '02 · Présentation',
-    fields: ['pitch', 'highlight', 'scope', 'description', 'cover'],
-  },
-  {
-    id: 'project-links',
-    label: '03 · Liens',
-    fields: ['liveUrl', 'repoUrl', 'repoUrlFront', 'repoUrlBack'],
-  },
-  {
-    id: 'project-stack',
-    label: '04 · Choix techniques',
-    fields: ['tags', 'techChoices', 'architectureDecisions'],
-  },
-  { id: 'project-gallery', label: '05 · Galerie', fields: [] },
-];
-
-const CONFLICT_MESSAGE =
-  "Le projet n'a pas été enregistré\u00a0: une version plus récente a été enregistrée ailleurs.";
-
-const TITLE_TAKEN_MESSAGE = 'Un autre projet porte déjà ce titre\u00a0: choisis-en un autre.';
-
-function saveFailure(error: unknown, existing: boolean): string {
-  if (isStaleVersion(error)) return CONFLICT_MESSAGE;
-  if (isTitleTaken(error)) return TITLE_TAKEN_MESSAGE;
-  const failure = existing
-    ? 'Erreur lors de la mise à jour du projet'
-    : 'Erreur lors de la création du projet';
-  return withValidationDetail(failure, error);
-}
-
-const PROJECT_EDITOR_COPY: AdminEditorCopy = {
-  testIdPrefix: 'admin-project',
-  loading: 'Chargement du projet…',
-  loadError: "Le projet n'a pas pu être chargé. Vérifie ta connexion, puis réessaie.",
-  missing: "Ce projet n'existe pas ou a été supprimé.",
-  backRoute: '/admin/projects',
-  backLabel: 'Retour aux projets',
-  leave: 'Les modifications non enregistrées de ce projet seront perdues.',
-  entity: 'de ce projet',
-};
+import {
+  PROJECT_EDITOR_COPY,
+  PROJECT_FORM_SECTIONS,
+  projectCoverFailure,
+  projectSaveFailure,
+} from './project-editor-copy';
 
 @Component({
   selector: 'app-admin-project-editor',
@@ -94,10 +35,8 @@ const PROJECT_EDITOR_COPY: AdminEditorCopy = {
     AppIcon,
     Button,
     AdminEditorFrame,
-    AdminEmptyState,
     AdminProjectForm,
-    AdminFormSection,
-    AdminProjectGallery,
+    AdminProjectGallerySection,
     AdminProjectPreview,
     AdminFormToc,
     AdminPageHeader,
@@ -164,27 +103,12 @@ const PROJECT_EDITOR_COPY: AdminEditorCopy = {
           (coverCleared)="draft.clearCover()"
           (coverRejected)="draft.rejectCover()"
         />
-        <fieldset
-          app-admin-form-section
-          id="project-gallery"
-          number="05"
-          heading="Galerie"
-          description="Captures de la fiche, dans cet ordre. Chaque capture a un texte alternatif."
-          class="mt-8.5"
-        >
-          @if (id(); as projectId) {
-            <app-admin-project-gallery
-              [projectId]="projectId"
-              [images]="gallery()"
-              (galleryChange)="updateGallery($event)"
-              (versionWritten)="adoptVersion($event)"
-            />
-          } @else {
-            <app-admin-empty-state data-testid="admin-project-gallery-pending" stamp="Galerie vide">
-              <p>Enregistre le projet pour ajouter des captures.</p>
-            </app-admin-empty-state>
-          }
-        </fieldset>
+        <app-admin-project-gallery-section
+          [projectId]="id()"
+          [images]="gallery()"
+          (galleryChange)="gallery.set($event)"
+          (versionWritten)="knownVersion.adopt($event)"
+        />
         <app-admin-save-bar
           class="mt-10"
           formId="project-form"
@@ -225,21 +149,13 @@ export class AdminProjectEditor implements LeaveConfirmable {
   protected readonly draft = new EditorDraft({
     loaded: this.loaded,
     toDraft: toProjectDraft,
-    sections: FORM_SECTIONS,
+    sections: PROJECT_FORM_SECTIONS,
   });
-  // Version la plus récente connue de l'onglet : celle du projet enregistré ou relu, ou celle qu'une
-  // écriture de galerie a rendue, la plus haute des deux quel que soit l'ordre des réponses.
-  private readonly knownVersion = linkedSignal<Project | null, number>({
-    source: this.draft.saved,
-    computation: (saved, previous) => {
-      const sameProject = saved !== null && previous?.source?.id === saved.id;
-      return Math.max(saved?.version ?? 0, sameProject ? previous.value : 0);
-    },
-  });
+  protected readonly knownVersion = new KnownVersion(this.draft.saved);
   protected readonly newerVersion = new NewerVersionCheck({
     edited: (): EditedVersion | null => {
       const saved = this.draft.saved();
-      return saved ? { id: saved.id, version: this.knownVersion() } : null;
+      return saved ? { id: saved.id, version: this.knownVersion.value() } : null;
     },
     readLatest: (id): Observable<number | null> =>
       this.gateway
@@ -282,34 +198,26 @@ export class AdminProjectEditor implements LeaveConfirmable {
           this.gateway.uploadImage(
             cover,
             project.id,
-            Math.max(project.version, this.knownVersion()),
+            Math.max(project.version, this.knownVersion.value()),
           ),
         ),
     );
     if (!result) return;
     if (!result.success) {
       if (isStaleVersion(result.error)) this.newerVersion.reportConflict();
-      this.toast.add({ severity: 'error', detail: saveFailure(result.error, id !== undefined) });
+      this.toast.add({
+        severity: 'error',
+        detail: projectSaveFailure(result.error, id !== undefined),
+      });
       return;
     }
     const { saved, cover } = result.data;
     if (cover.status === 'failed') {
       if (isStaleVersion(cover.error)) this.newerVersion.reportConflict();
-      const warning = id
-        ? "Projet mis à jour, mais l'image de couverture n'a pas été envoyée."
-        : "Projet créé, mais l'image de couverture n'a pas été envoyée\u00a0: renvoie-la depuis sa page.";
-      this.toast.add({ severity: 'warn', detail: uploadFailureMessage(warning, cover.error) });
+      this.toast.add({ severity: 'warn', detail: projectCoverFailure(cover.error, Boolean(id)) });
     }
     if (cover.status === 'sent' && id) this.projectResource.reload();
     this.toast.add({ severity: 'success', detail: id ? 'Projet mis à jour' : 'Projet créé' });
     if (!id) await this.router.navigate(['/admin/projects', saved.id], { replaceUrl: true });
-  }
-
-  protected updateGallery(gallery: readonly ProjectImage[]): void {
-    this.gallery.set(gallery);
-  }
-
-  protected adoptVersion(version: number): void {
-    this.knownVersion.update((known) => Math.max(known, version));
   }
 }
