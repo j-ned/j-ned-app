@@ -11,11 +11,11 @@ import {
 import { STORAGE_BUCKET, StorageService } from '../storage/storage.service';
 import { ImageOptimizer } from '../storage/image-optimizer.service';
 import { deleteS3IfExists, storeOptimizedImage } from '../storage/s3-utils';
-import type { BlogPostResponse } from './blog-post-response';
+import type { BlogPostResponse, BlogPostSummary } from './blog-post-response';
 import { contentImageKeysIn } from './blog-content-image';
 import { BlogContentImagesService } from './blog-content-images.service';
 import { publishedSlugFilter } from './published-post';
-import { countWords } from './word-count';
+import { countWords, sqlWordCount } from './word-count';
 import { CreateBlogPostDto } from './dto/create-blog-post.dto';
 import { UpdateBlogPostDto } from './dto/update-blog-post.dto';
 import { findByIdOrFail } from '../common/crud-helpers';
@@ -48,6 +48,30 @@ export class BlogService {
       .where(eq(blogPosts.status, 'published'))
       .orderBy(desc(blogPosts.publishedAt));
     return rows.map((r) => this.toResponse(r));
+  }
+
+  // Même liste sans les corps Markdown, jamais lus : le nombre de mots est compté par Postgres.
+  async findPublishedSummaries(): Promise<BlogPostSummary[]> {
+    const rows = await this.db
+      .select({
+        id: blogPosts.id,
+        title: blogPosts.title,
+        slug: blogPosts.slug,
+        excerpt: blogPosts.excerpt,
+        coverImage: blogPosts.coverImage,
+        tags: blogPosts.tags,
+        status: blogPosts.status,
+        likesCount: blogPosts.likesCount,
+        version: blogPosts.version,
+        publishedAt: blogPosts.publishedAt,
+        createdAt: blogPosts.createdAt,
+        updatedAt: blogPosts.updatedAt,
+        wordCount: sqlWordCount(blogPosts.contentMarkdown),
+      })
+      .from(blogPosts)
+      .where(eq(blogPosts.status, 'published'))
+      .orderBy(desc(blogPosts.publishedAt));
+    return rows.map((r) => ({ ...r, coverImage: this.coverUrl(r.coverImage) }));
   }
 
   async findAllForAdmin(): Promise<BlogPostResponse[]> {
@@ -235,10 +259,12 @@ export class BlogService {
   private toResponse(p: BlogPost): BlogPostResponse {
     return {
       ...p,
-      coverImage: p.coverImage
-        ? this.storage.getPublicUrl(STORAGE_BUCKET, p.coverImage)
-        : '',
+      coverImage: this.coverUrl(p.coverImage),
       wordCount: countWords(p.contentMarkdown),
     };
+  }
+
+  private coverUrl(key: string): string {
+    return key ? this.storage.getPublicUrl(STORAGE_BUCKET, key) : '';
   }
 }

@@ -18,7 +18,6 @@ import { blogCommentsRoutes } from '../blog-comments/blog-comments.routes';
 import type { BlogCommentsService } from '../blog-comments/blog-comments.service';
 import { blogContentImagesRoutes } from './blog-content-images.routes';
 import type { BlogContentImagesService } from './blog-content-images.service';
-import { toBlogPostSummary } from './blog-post-response';
 import type { BlogService } from './blog.service';
 import { createBlogPostSchema } from './dto/create-blog-post.dto';
 import { updateBlogPostSchema } from './dto/update-blog-post.dto';
@@ -43,15 +42,14 @@ function blogPostsRoutes(blog: BlogService, requireAuth: RequireAuth) {
   return (
     new Hono<AppEnv>()
       // Articles publiés (public), sans leur corps : `?include=content` l'ajoute (flux RSS du site).
-      .get('/', throttle(PUBLIC_READ_THROTTLE), async (c) => {
-        const posts = await blog.findAllPublished();
-        return reply(
+      .get('/', throttle(PUBLIC_READ_THROTTLE), async (c) =>
+        reply(
           c,
           c.req.query('include') === 'content'
-            ? posts
-            : posts.map(toBlogPostSummary),
-        );
-      })
+            ? await blog.findAllPublished()
+            : await blog.findPublishedSummaries(),
+        ),
+      )
 
       // Tous les articles, brouillons compris (admin).
       .get('/admin', throttleSession(requireAuth), async (c) =>

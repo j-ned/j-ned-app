@@ -35,6 +35,7 @@ const VALID = {
 describe('blog routes (HTTP)', () => {
   const blog = {
     findAllPublished: jest.fn(),
+    findPublishedSummaries: jest.fn(),
     findAllForAdmin: jest.fn(),
     findBySlug: jest.fn(),
     create: jest.fn(),
@@ -102,9 +103,9 @@ describe('blog routes (HTTP)', () => {
   });
 
   describe('public reads', () => {
-    it('GET /posts leaves out the Markdown body but keeps its word count', async () => {
-      blog.findAllPublished.mockResolvedValueOnce([
-        { ...POST, contentMarkdown: '# Corps', wordCount: 900 },
+    it('GET /posts serves the summaries, without the Markdown body but with its word count', async () => {
+      blog.findPublishedSummaries.mockResolvedValueOnce([
+        { ...POST, wordCount: 900 },
       ]);
       const [post] = (await (await call('/posts')).json()) as Record<
         string,
@@ -143,7 +144,7 @@ describe('blog routes (HTTP)', () => {
     it.each(['/posts', '/posts/mon-article'])(
       'GET %s has the public read quota (120/min)',
       async (path) => {
-        blog.findAllPublished.mockResolvedValue([]);
+        blog.findPublishedSummaries.mockResolvedValue([]);
         blog.findBySlug.mockResolvedValue(POST);
         const statuses: number[] = [];
         for (let i = 0; i <= PUBLIC_READ_THROTTLE.limit; i += 1) {
