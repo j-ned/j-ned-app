@@ -1,3 +1,4 @@
+import { describedError } from '@shared/testing/described-error';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -37,14 +38,14 @@ describe('Login a11y', () => {
   });
 
   it('email input has type=email, autocomplete=email, aria-required=true', () => {
-    const email = fixture.nativeElement.querySelector('input#email') as HTMLInputElement;
+    const email = byTestId(fixture.nativeElement, 'login-email') as HTMLInputElement;
     expect(email.type).toBe('email');
     expect(email.autocomplete).toBe('email');
     expect(email.getAttribute('aria-required')).toBe('true');
   });
 
   it('password input has autocomplete=current-password, aria-required=true', () => {
-    const password = fixture.nativeElement.querySelector('input#password') as HTMLInputElement;
+    const password = byTestId(fixture.nativeElement, 'login-password') as HTMLInputElement;
     expect(password.autocomplete).toBe('current-password');
     expect(password.getAttribute('aria-required')).toBe('true');
   });
@@ -54,11 +55,11 @@ describe('Login a11y', () => {
     fixture.componentInstance.form.email().value.set('');
     fixture.detectChanges();
 
-    const email = fixture.nativeElement.querySelector('input#email') as HTMLInputElement;
+    const email = byTestId(fixture.nativeElement, 'login-email') as HTMLInputElement;
     expect(email.getAttribute('aria-invalid')).toBe('true');
     expect(email.getAttribute('aria-describedby')).toBe('login-email-error');
 
-    const errorMsg = fixture.nativeElement.querySelector('#login-email-error');
+    const errorMsg = describedError(fixture.nativeElement, 'login-email');
     expect(errorMsg).not.toBeNull();
     expect(errorMsg!.getAttribute('role')).toBe('alert');
   });
@@ -68,11 +69,11 @@ describe('Login a11y', () => {
     fixture.componentInstance.form.password().value.set('');
     fixture.detectChanges();
 
-    const password = fixture.nativeElement.querySelector('input#password') as HTMLInputElement;
+    const password = byTestId(fixture.nativeElement, 'login-password') as HTMLInputElement;
     expect(password.getAttribute('aria-invalid')).toBe('true');
     expect(password.getAttribute('aria-describedby')).toBe('login-password-error');
 
-    const errorMsg = fixture.nativeElement.querySelector('#login-password-error');
+    const errorMsg = describedError(fixture.nativeElement, 'login-password');
     expect(errorMsg).not.toBeNull();
     expect(errorMsg!.getAttribute('role')).toBe('alert');
   });
@@ -105,7 +106,7 @@ describe('Login: longueur du mot de passe', () => {
       fixture.componentInstance.form.password().markAsTouched();
       await settle(fixture);
 
-      const message = (fixture.nativeElement as HTMLElement).querySelector('#login-password-error');
+      const message = describedError(fixture.nativeElement as HTMLElement, 'login-password');
       expect(message?.textContent?.trim() ?? null).toBe(error);
     },
   );

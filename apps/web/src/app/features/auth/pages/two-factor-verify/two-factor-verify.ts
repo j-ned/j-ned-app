@@ -59,6 +59,7 @@ const VERIFICATION_FAILURE_MESSAGES = {
             <label for="code" class="form-label">Code TOTP</label>
             <input
               id="code"
+              data-testid="two-factor-code"
               type="text"
               [formField]="form.code"
               autocomplete="one-time-code"

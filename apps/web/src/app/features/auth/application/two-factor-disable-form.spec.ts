@@ -1,3 +1,4 @@
+import { describedError } from '@shared/testing/described-error';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TwoFactorDisableForm } from './two-factor-disable-form';
@@ -18,7 +19,7 @@ describe('TwoFactorDisableForm: enabled status (showForm=false)', () => {
 
   it('does not render the password form while showForm is false', () => {
     const fixture = render(false);
-    const input = fixture.nativeElement.querySelector('input#disable-pw');
+    const input = byTestId(fixture.nativeElement, 'twofa-disable-password');
     expect(input).toBeNull();
   });
 
@@ -52,7 +53,7 @@ describe('TwoFactorDisableForm: enabled status (showForm=false)', () => {
 describe('TwoFactorDisableForm: disable form (showForm=true)', () => {
   it('password input has autocomplete=current-password and aria-required=true', () => {
     const fixture = render(true);
-    const input = fixture.nativeElement.querySelector('input#disable-pw') as HTMLInputElement;
+    const input = byTestId(fixture.nativeElement, 'twofa-disable-password') as HTMLInputElement;
     expect(input).not.toBeNull();
     expect(input.autocomplete).toBe('current-password');
     expect(input.getAttribute('aria-required')).toBe('true');
@@ -64,11 +65,11 @@ describe('TwoFactorDisableForm: disable form (showForm=true)', () => {
     fixture.componentInstance.disableForm.password().value.set('');
     fixture.detectChanges();
 
-    const input = fixture.nativeElement.querySelector('input#disable-pw') as HTMLInputElement;
+    const input = byTestId(fixture.nativeElement, 'twofa-disable-password') as HTMLInputElement;
     expect(input.getAttribute('aria-invalid')).toBe('true');
     expect(input.getAttribute('aria-describedby')).toBe('twofa-setup-disable-pw-error');
 
-    const error = fixture.nativeElement.querySelector('#twofa-setup-disable-pw-error');
+    const error = describedError(fixture.nativeElement, 'twofa-disable-password');
     expect(error).not.toBeNull();
     expect(error!.getAttribute('role')).toBe('alert');
     expect(error!.textContent?.trim()).toBe('Ce champ est obligatoire');
@@ -85,7 +86,7 @@ describe('TwoFactorDisableForm: disable form (showForm=true)', () => {
       fixture.componentInstance.disableForm.password().markAsTouched();
       fixture.detectChanges();
 
-      const message = fixture.nativeElement.querySelector('#twofa-setup-disable-pw-error');
+      const message = describedError(fixture.nativeElement, 'twofa-disable-password');
       expect(message?.textContent?.trim() ?? null).toBe(error);
     },
   );

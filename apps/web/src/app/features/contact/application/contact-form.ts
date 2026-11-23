@@ -118,6 +118,7 @@ const MESSAGE_MAX_LENGTH = 5000;
                     >
                     <input
                       id="email"
+                      data-testid="contact-email"
                       type="email"
                       [formField]="contactForm.email"
                       aria-required="true"
@@ -157,6 +158,7 @@ const MESSAGE_MAX_LENGTH = 5000;
                   >
                   <textarea
                     id="message"
+                    data-testid="contact-message"
                     [formField]="contactForm.message"
                     aria-required="true"
                     rows="6"

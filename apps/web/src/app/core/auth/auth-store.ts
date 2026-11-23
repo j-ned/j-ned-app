@@ -11,6 +11,12 @@ import type {
 import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
 import { Monitoring } from '@core/monitoring/monitoring';
 import { injectIsBrowser } from '@core/ssr/inject-is-browser';
+import {
+  injectStorageHost,
+  readStored,
+  removeStored,
+  writeStored,
+} from '@core/storage/browser-storage';
 
 // Indice local posé à la connexion : sans lui, aucun appel /auth/me au démarrage. Le cookie
 // httpOnly reste la source de vérité ; l'indice évite seulement un 401 par visite anonyme.
@@ -41,6 +47,7 @@ export class AuthStore {
   private readonly monitoring = inject(Monitoring);
   private readonly destroyRef = inject(DestroyRef);
   private readonly isBrowser = injectIsBrowser();
+  private readonly storage = injectStorageHost();
   private readonly _currentUser = signal<User | null>(null);
   private readonly _pendingChallengeToken = signal<string | null>(null);
 
@@ -174,23 +181,12 @@ export class AuthStore {
   }
 
   private hasSessionHint(): boolean {
-    try {
-      return localStorage.getItem(SESSION_HINT_KEY) === '1';
-    } catch {
-      return false;
-    }
+    return readStored(this.storage, 'localStorage', SESSION_HINT_KEY) === '1';
   }
 
   private writeSessionHint(present: boolean): void {
-    if (!this.isBrowser) return;
-    try {
-      if (present) {
-        localStorage.setItem(SESSION_HINT_KEY, '1');
-      } else {
-        localStorage.removeItem(SESSION_HINT_KEY);
-      }
-    } catch {
-      // Stockage indisponible : on retombe sur l'ancien comportement (un /auth/me de plus).
-    }
+    // Stockage indisponible : on retombe sur l'ancien comportement (un /auth/me de plus).
+    if (present) writeStored(this.storage, 'localStorage', SESSION_HINT_KEY, '1');
+    else removeStored(this.storage, 'localStorage', SESSION_HINT_KEY);
   }
 }
