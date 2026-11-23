@@ -1,6 +1,6 @@
+import { notStubbed } from '../testing/stub';
 import { testApp } from '../testing/test-app';
 import { contactRoutes } from './contact.routes';
-import type { ContactService } from './contact.service';
 import { denyAll, passThrough } from '../testing/require-auth';
 
 const MESSAGE = {
@@ -14,9 +14,12 @@ describe('contact routes', () => {
   const contact = {
     create: jest.fn().mockResolvedValue(undefined),
     unreadCount: jest.fn().mockResolvedValue({ count: 0 }),
+    findAll: notStubbed('findAll'),
+    markAllRead: notStubbed('markAllRead'),
+    markRead: notStubbed('markRead'),
+    remove: notStubbed('remove'),
   };
-  const service = contact as unknown as ContactService;
-  const app = testApp('/api/contact', contactRoutes(service, passThrough));
+  const app = testApp('/api/contact', contactRoutes(contact, passThrough));
 
   const send = (ip: string) =>
     app.request('/api/contact/messages', {
@@ -65,7 +68,7 @@ describe('contact routes', () => {
   });
 
   it('Given an anonymous visitor, When it reads the unread count an 11th time within a minute, Then it gets 429', async () => {
-    const anonymous = testApp('/api/contact', contactRoutes(service, denyAll));
+    const anonymous = testApp('/api/contact', contactRoutes(contact, denyAll));
 
     expect(
       await statusesOf(10, () => unreadCount(anonymous, '203.0.113.4')),

@@ -28,10 +28,19 @@ import { twoFactorVerifySchema } from './dto/two-factor-verify.dto';
 import type { RequireAuth } from './require-auth';
 
 export type AuthRoutesDeps = {
-  readonly auth: AuthService;
+  readonly auth: Pick<
+    AuthService,
+    | 'login'
+    | 'verifyTwoFactor'
+    | 'revokeSessionFromToken'
+    | 'changePassword'
+    | 'generateTwoFactorSecret'
+    | 'enableTwoFactor'
+    | 'disableTwoFactor'
+  >;
   readonly config: AppConfigService;
   readonly requireAuth: RequireAuth;
-  readonly journal: LoginJournalService;
+  readonly journal: Pick<LoginJournalService, 'findAll'>;
 };
 
 const loginOrigin = (c: AppContext): LoginOrigin => ({

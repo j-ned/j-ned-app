@@ -1,4 +1,5 @@
 import { Readable } from 'node:stream';
+import { notStubbed } from '../testing/stub';
 import { testApp } from '../testing/test-app';
 import type { ImageOptimizer } from './image-optimizer.service';
 import { ResizedImageService } from './resized-image.service';
@@ -12,11 +13,7 @@ describe('storage routes', () => {
   const resizedImages = { get: jest.fn() };
   const app = testApp(
     '/api/storage',
-    storageRoutes(
-      storage as unknown as StorageService,
-      shareCards as unknown as ShareCardService,
-      resizedImages as unknown as ResizedImageService,
-    ),
+    storageRoutes(storage, shareCards, resizedImages),
   );
 
   beforeEach(() => jest.clearAllMocks());
@@ -144,7 +141,10 @@ describe('storage routes', () => {
 });
 
 describe('storage routes, stockage désactivé (preview sans S3)', () => {
-  const images = {} as ImageOptimizer;
+  const images: Pick<ImageOptimizer, 'toShareCard' | 'toWidth'> = {
+    toShareCard: notStubbed('toShareCard'),
+    toWidth: notStubbed('toWidth'),
+  };
   const storage = new StorageService(null);
   const app = testApp(
     '/api/storage',

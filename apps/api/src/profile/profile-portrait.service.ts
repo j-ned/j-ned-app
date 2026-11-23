@@ -24,8 +24,11 @@ export class ProfilePortraitService {
 
   constructor(
     private readonly db: Database,
-    private readonly storage: StorageService,
-    private readonly images: ImageOptimizer,
+    private readonly storage: Pick<
+      StorageService,
+      'upload' | 'delete' | 'getPublicUrl'
+    >,
+    private readonly images: Pick<ImageOptimizer, 'toPortrait'>,
   ) {}
 
   // Recadrage hors verrou ; envoi sous une clé hachée et écriture, verrou tenu.

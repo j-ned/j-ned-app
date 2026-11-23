@@ -17,7 +17,10 @@ const CV_UPLOAD = {
   fileType: /^application\/pdf$/,
 } as const;
 
-export function cvRoutes(cv: CvService, requireAuth: RequireAuth) {
+export function cvRoutes(
+  cv: Pick<CvService, 'upsert' | 'findLatestMetadata' | 'download' | 'remove'>,
+  requireAuth: RequireAuth,
+) {
   return (
     new Hono<AppEnv>()
       // Ajoute ou remplace le CV.

@@ -5,11 +5,9 @@ import {
 } from '../common/http-errors';
 import type { UploadedFile } from '../common/http';
 import { Logger } from '../common/logger';
-import type { Database } from '../database/drizzle.types';
 import type { ProfileContentRow } from '../database/schema/profile-content';
+import { asDatabase } from '../testing/mock-database';
 import { createMockDb } from '../testing/test-utils';
-import type { ImageOptimizer } from '../storage/image-optimizer.service';
-import type { StorageService } from '../storage/storage.service';
 import { ProfilePortraitService } from './profile-portrait.service';
 import { aProfileContent } from '../testing/profile-test-builders';
 
@@ -123,11 +121,7 @@ describe('ProfilePortraitService', () => {
         }),
       ),
     };
-    service = new ProfilePortraitService(
-      db as unknown as Database,
-      storage as unknown as StorageService,
-      images as unknown as ImageOptimizer,
-    );
+    service = new ProfilePortraitService(asDatabase(db), storage, images);
   });
   afterEach(() => jest.restoreAllMocks());
 
