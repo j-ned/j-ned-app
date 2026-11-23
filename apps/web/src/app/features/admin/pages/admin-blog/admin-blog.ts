@@ -3,7 +3,7 @@ import { rxResource } from '@angular/core/rxjs-interop';
 import type { Observable } from 'rxjs';
 import { RouterLink } from '@angular/router';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
-import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
+import type { BlogPostSummary } from '@features/blog/domain/models/blog-post.model';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Button } from '@shared/ui/button';
 import { ConfirmDialog } from '@shared/ui/confirm-dialog';
@@ -150,7 +150,7 @@ export class AdminBlog {
     loadState(this.postsResource, () => this.posts().length === 0),
   );
 
-  protected readonly deletion = new PendingDeletion<BlogPost>({
+  protected readonly deletion = new PendingDeletion<BlogPostSummary>({
     list: this.postsResource,
     remove: (post): Observable<void> => this.gateway.deletePost(post.id),
     succeeded: (): void => this.toast.add({ severity: 'success', detail: 'Article supprimé' }),

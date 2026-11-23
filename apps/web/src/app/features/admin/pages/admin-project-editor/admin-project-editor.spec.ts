@@ -781,6 +781,25 @@ describe('AdminProjectEditor: version plus récente enregistrée ailleurs', () =
     return read;
   }
 
+  it('Given the project answering after the editor opened When it fills the form Then the status region says nothing', async () => {
+    const answer = new Subject<Project | null>();
+    const editor = await openEditor('/admin/projects/p-1', {
+      getProjectById: vi.fn(() => answer),
+    });
+
+    answer.next(DASHFLOW);
+    answer.complete();
+    await settleBounded(editor.fixture);
+
+    expect({
+      field: fieldValue(editor.host, 'admin-project-title'),
+      notice: readNewerVersion(editor, PREFIX),
+    }).toEqual({
+      field: 'DashFlow',
+      notice: { role: 'status', text: '', focused: false },
+    });
+  });
+
   it('Given a project saved elsewhere since it was opened When the admin returns to the tab Then a status says so in the background and the draft stays', async () => {
     const editor = await openEditor('/admin/projects/p-1', { getProjectById: savedElsewhere() });
     await typeIn(editor, 'admin-project-title', 'Mon brouillon');

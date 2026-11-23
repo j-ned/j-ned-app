@@ -43,7 +43,3 @@ export function toPreviewPost(draft: PostDraft, base: BlogPost | null): BlogPost
     wordCount: countWords(draft.contentMarkdown),
   };
 }
-
-export function findPostById(posts: readonly BlogPost[], id: string): BlogPost | null {
-  return posts.find((post) => post.id === id) ?? null;
-}

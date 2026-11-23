@@ -3,7 +3,7 @@
 type Method = 'GET' | 'POST' | 'PUT' | 'PATCH' | 'DELETE';
 export type Route = { readonly method: Method; readonly path: string };
 
-const ID = '00000000-0000-4000-8000-000000000000';
+export const ID = '00000000-0000-4000-8000-000000000000';
 
 // Statistiques dont le paramètre `type` est obligatoire (400 sans lui).
 const STAT_QUERY: Readonly<Record<string, string>> = {
@@ -41,6 +41,7 @@ export const ADMIN_ROUTES: readonly Route[] = [
   { method: 'POST', path: `/api/blog/comments/${ID}/replies` },
   { method: 'POST', path: '/api/blog/content-images' },
   { method: 'GET', path: '/api/blog/posts/admin' },
+  { method: 'GET', path: `/api/blog/posts/admin/${ID}` },
   { method: 'POST', path: '/api/blog/posts' },
   { method: 'PATCH', path: `/api/blog/posts/${ID}` },
   { method: 'DELETE', path: `/api/blog/posts/${ID}` },

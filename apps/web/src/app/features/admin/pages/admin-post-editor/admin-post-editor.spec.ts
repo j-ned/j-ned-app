@@ -3,7 +3,7 @@ import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { By } from '@angular/platform-browser';
 import { Router, provideRouter, withComponentInputBinding } from '@angular/router';
 import { RouterTestingHarness } from '@angular/router/testing';
-import { BehaviorSubject, of, Subject, throwError, type Observable } from 'rxjs';
+import { of, Subject, throwError, type Observable } from 'rxjs';
 import type { Mock } from 'vitest';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import type { BlogPost, BlogPostInput } from '@features/blog/domain/models/blog-post.model';
@@ -67,7 +67,7 @@ const FRAISEUSE = makeBlogPost({
 
 type Spies = {
   readonly getAllPostsForAdmin: Mock<BlogGateway['getAllPostsForAdmin']>;
-  readonly invalidateAdminPosts: Mock<BlogGateway['invalidateAdminPosts']>;
+  readonly getAdminPost: Mock<BlogGateway['getAdminPost']>;
   readonly getLatestAdminPost: Mock<BlogGateway['getLatestAdminPost']>;
   readonly createPost: Mock<BlogGateway['createPost']>;
   readonly updatePost: Mock<BlogGateway['updatePost']>;
@@ -87,8 +87,10 @@ type Overrides = Partial<Omit<Spies, 'toast'>>;
 
 async function openEditor(url: string, overrides: Overrides = {}): Promise<Editor> {
   const spies: Spies = {
-    getAllPostsForAdmin: vi.fn((): Observable<readonly BlogPost[]> => of([CHIFFREMENT, FRAISEUSE])),
-    invalidateAdminPosts: vi.fn(),
+    getAllPostsForAdmin: vi.fn(() => of([CHIFFREMENT, FRAISEUSE])),
+    getAdminPost: vi.fn((id: string): Observable<BlogPost | null> =>
+      of([CHIFFREMENT, FRAISEUSE].find((post) => post.id === id) ?? null),
+    ),
     getLatestAdminPost: vi.fn((): Observable<BlogPost | null> => of(CHIFFREMENT)),
     createPost: vi.fn((): Observable<BlogPost> => of(makeBlogPost({ id: 'b-9', title: 'X' }))),
     updatePost: vi.fn((): Observable<BlogPost> => of(CHIFFREMENT)),
@@ -120,7 +122,7 @@ async function openEditor(url: string, overrides: Overrides = {}): Promise<Edito
         provide: BlogGateway,
         useValue: stubBlogGateway({
           getAllPostsForAdmin: spies.getAllPostsForAdmin,
-          invalidateAdminPosts: spies.invalidateAdminPosts,
+          getAdminPost: spies.getAdminPost,
           getLatestAdminPost: spies.getLatestAdminPost,
           createPost: spies.createPost,
           updatePost: spies.updatePost,
@@ -175,18 +177,20 @@ const COVER = new File(['x'], 'cover.png', { type: 'image/png' });
 
 describe('AdminPostEditor: ouverture', () => {
   it.each([{ url: '/admin/blog/b-1', title: 'Chiffrement côté client' }])(
-    'Given the admin list of articles When $url is opened Then that article is found in the list and its form filled',
+    'Given an article on the API When $url is opened Then only that article is read, with its body, and its form filled',
     async ({ url, title }) => {
       const editor = await openEditor(url);
 
       expect({
         crash: editor.crash,
-        requested: editor.getAllPostsForAdmin.mock.calls.length,
+        read: editor.getAdminPost.mock.calls,
         field: fieldValue(editor.host, 'admin-post-title'),
+        body: fieldValue(editor.host, 'admin-post-content'),
       }).toEqual({
         crash: null,
-        requested: 1,
+        read: [['b-1']],
         field: title,
+        body: CHIFFREMENT.contentMarkdown,
       });
     },
   );
@@ -197,11 +201,13 @@ describe('AdminPostEditor: ouverture', () => {
     expect({
       crash: editor.crash,
       requested: editor.getAllPostsForAdmin.mock.calls.length,
+      read: editor.getAdminPost.mock.calls.length,
       field: fieldValue(editor.host, 'admin-post-title'),
       draft: (byTestId(editor.host, 'admin-post-status-draft') as HTMLInputElement | null)?.checked,
     }).toEqual({
       crash: null,
       requested: 1,
+      read: 0,
       field: '',
       draft: true,
     });
@@ -209,20 +215,38 @@ describe('AdminPostEditor: ouverture', () => {
 });
 
 describe('AdminPostEditor: chargement, erreur et introuvable', () => {
-  it('Given the list failed to load When Réessayer is pressed Then it is requested again and the form shows', async () => {
-    const getAllPostsForAdmin = vi
-      .fn<BlogGateway['getAllPostsForAdmin']>()
+  it('Given the article failed to load When Réessayer is pressed Then it is requested again and the form shows', async () => {
+    const getAdminPost = vi
+      .fn<BlogGateway['getAdminPost']>()
       .mockReturnValueOnce(throwError(() => new Error('down')))
-      .mockReturnValue(of([CHIFFREMENT]));
-    const editor = await openEditor('/admin/blog/b-1', { getAllPostsForAdmin });
+      .mockReturnValue(of(CHIFFREMENT));
+    const editor = await openEditor('/admin/blog/b-1', { getAdminPost });
 
     const crash = await captureCrash(() => pressTestId(editor.fixture, 'load-error-retry'));
 
     expect({
       crash,
-      calls: getAllPostsForAdmin.mock.calls.length,
+      calls: getAdminPost.mock.calls.length,
       field: fieldValue(editor.host, 'admin-post-title'),
     }).toEqual({ crash: null, calls: 2, field: 'Chiffrement côté client' });
+  });
+});
+
+describe('AdminPostEditor: article supprimé', () => {
+  it('Given an article gone from the API When /admin/blog/b-1 is opened Then the editor says so instead of a form', async () => {
+    const editor = await openEditor('/admin/blog/b-1', {
+      getAdminPost: vi.fn((): Observable<BlogPost | null> => of(null)),
+    });
+
+    expect({
+      crash: editor.crash,
+      missing: testIdText(editor.host, 'admin-post-editor-missing'),
+      form: byTestId(editor.host, 'admin-post-title'),
+    }).toEqual({
+      crash: null,
+      missing: "Cet article n'existe pas ou a été supprimé.",
+      form: null,
+    });
   });
 });
 
@@ -404,7 +428,7 @@ describe('AdminPostEditor: mise à jour', () => {
     }).toEqual({ uploads: [[COVER, 'b-1', 1]], updates: 1, updateFirst: true });
   });
 
-  it('Given the cover upload fails after the update When the save ends Then the list is not requested again', async () => {
+  it('Given the cover upload fails after the update When the save ends Then neither the list nor the article is requested again', async () => {
     const editor = await openEditor('/admin/blog/b-1', {
       uploadCoverImage: vi.fn((): Observable<string> => throwError(() => new Error('upload'))),
     });
@@ -412,7 +436,19 @@ describe('AdminPostEditor: mise à jour', () => {
     await chooseCover(editor, COVER);
     await save(editor);
 
-    expect(editor.getAllPostsForAdmin.mock.calls.length).toBe(1);
+    expect({
+      list: editor.getAllPostsForAdmin.mock.calls.length,
+      article: editor.getAdminPost.mock.calls.length,
+    }).toEqual({ list: 1, article: 1 });
+  });
+
+  it('Given the cover is sent after the update When the save ends Then the article is read again for its new cover', async () => {
+    const editor = await openEditor('/admin/blog/b-1');
+
+    await chooseCover(editor, COVER);
+    await save(editor);
+
+    expect(editor.getAdminPost.mock.calls).toEqual([['b-1'], ['b-1']]);
   });
 
   it('Given the update fails When the article is saved Then an error is told, no cover is sent and the title is unchanged', async () => {
@@ -825,14 +861,34 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
     await settleBounded(editor.fixture);
   }
 
-  function editorWithList(): Promise<Editor> {
-    const list = new BehaviorSubject<readonly BlogPost[]>([CHIFFREMENT, FRAISEUSE]);
+  function editorWithNewerVersion(): Promise<Editor> {
     return openEditor('/admin/blog/b-1', {
-      getAllPostsForAdmin: vi.fn(() => list),
-      invalidateAdminPosts: vi.fn(() => list.next([NEWER, FRAISEUSE])),
+      getAdminPost: vi
+        .fn<BlogGateway['getAdminPost']>()
+        .mockReturnValueOnce(of(CHIFFREMENT))
+        .mockReturnValue(of(NEWER)),
       getLatestAdminPost: vi.fn(() => of(NEWER)),
     });
   }
+
+  const reloads = (editor: Editor): number => editor.getAdminPost.mock.calls.length - 1;
+
+  it('Given the article answering after the editor opened When it fills the form Then the status region says nothing', async () => {
+    const answer = new Subject<BlogPost | null>();
+    const editor = await openEditor('/admin/blog/b-1', { getAdminPost: vi.fn(() => answer) });
+
+    answer.next(CHIFFREMENT);
+    answer.complete();
+    await settleBounded(editor.fixture);
+
+    expect({
+      field: fieldValue(editor.host, 'admin-post-title'),
+      notice: readNewerVersion(editor, PREFIX),
+    }).toEqual({
+      field: 'Chiffrement côté client',
+      notice: { role: 'status', text: '', focused: false },
+    });
+  });
 
   it('Given an article saved elsewhere since it was opened When the admin returns to the tab Then a status says so, the draft and the focus stay', async () => {
     const editor = await openEditor('/admin/blog/b-1', {
@@ -943,14 +999,14 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
   });
 
   it('Given a newer version and no unsaved change When the admin reloads it Then it replaces the form without question and the status says it is loaded', async () => {
-    const editor = await editorWithList();
+    const editor = await editorWithNewerVersion();
     await backToTab(editor);
 
     await reloadLatest(editor, PREFIX);
 
     expect({
       dialog: readConfirmDialog(reloadDialog(editor, PREFIX)).open,
-      reloaded: editor.invalidateAdminPosts.mock.calls.length,
+      reloaded: reloads(editor),
       field: fieldValue(editor.host, 'admin-post-title'),
       state: saveBarState(editor),
       notice: readNewerVersion(editor, PREFIX),
@@ -964,7 +1020,7 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
   });
 
   it('Given a newer version and unsaved changes When the admin reloads it Then a dialog names what will be lost before anything is reloaded', async () => {
-    const editor = await editorWithList();
+    const editor = await editorWithNewerVersion();
     await typeIn(editor, 'admin-post-title', 'Mon brouillon');
     await typeIn(editor, 'admin-post-excerpt', 'Mon résumé');
     await backToTab(editor);
@@ -973,7 +1029,7 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
 
     expect({
       dialog: readConfirmDialog(reloadDialog(editor, PREFIX)),
-      reloaded: editor.invalidateAdminPosts.mock.calls.length,
+      reloaded: reloads(editor),
     }).toEqual({
       dialog: {
         open: true,
@@ -1018,7 +1074,7 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
   ] as const)(
     'Given the reload dialog When the admin answers $answer Then the draft is kept or replaced accordingly',
     async ({ answer, expected }) => {
-      const editor = await editorWithList();
+      const editor = await editorWithNewerVersion();
       await typeIn(editor, 'admin-post-title', 'Mon brouillon');
       await backToTab(editor);
       await reloadLatest(editor, PREFIX);
@@ -1026,7 +1082,7 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
       await answerConfirmDialog(editor.fixture, answer, reloadDialog(editor, PREFIX));
 
       expect({
-        reloaded: editor.invalidateAdminPosts.mock.calls.length,
+        reloaded: reloads(editor),
         field: fieldValue(editor.host, 'admin-post-title'),
         state: saveBarState(editor),
         notice: readNewerVersion(editor, PREFIX).text,
@@ -1035,7 +1091,7 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
   );
 
   it('Given a cover chosen and not saved When the latest version is reloaded Then the cover is dropped with the rest of the draft', async () => {
-    const editor = await editorWithList();
+    const editor = await editorWithNewerVersion();
     await chooseCover(editor, COVER);
     await backToTab(editor);
     await reloadLatest(editor, PREFIX);
@@ -1045,7 +1101,7 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
     expect(saveBarState(editor)).toBe('Aucune modification');
   });
   it('Given a newer version detected When the admin saves Then a dialog says the save will replace it, and nothing is written meanwhile', async () => {
-    const editor = await editorWithList();
+    const editor = await editorWithNewerVersion();
     await typeIn(editor, 'admin-post-title', 'Mon brouillon');
     await backToTab(editor);
 
@@ -1135,7 +1191,7 @@ describe('AdminPostEditor: version plus récente enregistrée ailleurs', () => {
   ])(
     'Given the latest version loaded When $then follows Then « Dernière version chargée. » is no longer said',
     async ({ act }) => {
-      const editor = await editorWithList();
+      const editor = await editorWithNewerVersion();
       await backToTab(editor);
       await reloadLatest(editor, PREFIX);
       const loaded = readNewerVersion(editor, PREFIX).text;
@@ -1212,7 +1268,7 @@ describe('AdminPostEditor: enregistrement sous condition de version', () => {
 
   function openAtVersion3(overrides: Overrides = {}): Promise<Editor> {
     return openEditor('/admin/blog/b-1', {
-      getAllPostsForAdmin: vi.fn(() => of([OPENED, FRAISEUSE])),
+      getAdminPost: vi.fn(() => of(OPENED)),
       getLatestAdminPost: vi.fn(() => of(LATEST)),
       updatePost: vi.fn(() => of(makeBlogPost({ ...OPENED, version: 4 }))),
       ...overrides,

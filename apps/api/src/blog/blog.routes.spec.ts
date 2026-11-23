@@ -5,7 +5,7 @@ import {
   NotFoundException,
   PreconditionFailedException,
 } from '../common/http-errors';
-import { PUBLIC_READ_THROTTLE } from '../common/throttle';
+import { ADMIN_READ_THROTTLE, PUBLIC_READ_THROTTLE } from '../common/throttle';
 import { testApp } from '../testing/test-app';
 import type { BlogContentImagesService } from './blog-content-images.service';
 import { blogRoutes } from './blog.routes';
@@ -36,7 +36,8 @@ describe('blog routes (HTTP)', () => {
   const blog = {
     findAllPublished: jest.fn(),
     findPublishedSummaries: jest.fn(),
-    findAllForAdmin: jest.fn(),
+    findAdminSummaries: jest.fn(),
+    findByIdForAdmin: jest.fn(),
     findBySlug: jest.fn(),
     create: jest.fn(),
     update: jest.fn(),
@@ -158,14 +159,65 @@ describe('blog routes (HTTP)', () => {
       },
     );
 
-    it('GET /posts/admin is not taken for a slug and requires a session', async () => {
-      blog.findAllForAdmin.mockResolvedValueOnce([POST]);
+    it('GET /posts/admin is not taken for a slug, requires a session and serves the summaries', async () => {
+      blog.findAdminSummaries.mockResolvedValueOnce([POST]);
       const res = await call('/posts/admin');
       expect(res.status).toBe(200);
       expect(await res.json()).toEqual([POST]);
       expect(blog.findBySlug).not.toHaveBeenCalled();
 
       expect((await call('/posts/admin', {}, build(denyAll))).status).toBe(401);
+    });
+
+    it('Given an id, When GET /posts/admin/:id, Then the post, draft or not, comes with its version as ETag', async () => {
+      blog.findByIdForAdmin.mockResolvedValueOnce(POST);
+
+      const res = await call(`/posts/admin/${ID}`);
+
+      expect({
+        status: res.status,
+        body: (await res.json()) as unknown,
+        etag: res.headers.get('etag'),
+        calls: blog.findByIdForAdmin.mock.calls,
+      }).toEqual({ status: 200, body: POST, etag: '"4"', calls: [[ID]] });
+    });
+
+    it('Given an unknown id, When GET /posts/admin/:id, Then 404 in the API error format', async () => {
+      blog.findByIdForAdmin.mockRejectedValueOnce(
+        new NotFoundException(`Blog post ${ID} not found`),
+      );
+
+      const res = await call(`/posts/admin/${ID}`);
+
+      expect(res.status).toBe(404);
+      expect(await res.json()).toMatchObject({
+        statusCode: 404,
+        path: `/api/blog/posts/admin/${ID}`,
+      });
+    });
+
+    it('Given a non-UUID id, When GET /posts/admin/:id, Then 400 without calling the service', async () => {
+      const res = await call('/posts/admin/pas-un-uuid');
+
+      expect(res.status).toBe(400);
+      expect(blog.findByIdForAdmin).not.toHaveBeenCalled();
+    });
+
+    it('Given one account reading from several addresses, When GET /posts/admin/:id goes over the admin read quota, Then 429', async () => {
+      blog.findByIdForAdmin.mockResolvedValue(POST);
+      const statuses: number[] = [];
+      for (let i = 0; i <= ADMIN_READ_THROTTLE.limit; i += 1) {
+        statuses.push((await call(`/posts/admin/${ID}`)).status);
+      }
+
+      expect(statuses.slice(-2)).toEqual([200, 429]);
+    });
+
+    it('Given no session, When GET /posts/admin/:id, Then 401 without calling the service', async () => {
+      const res = await call(`/posts/admin/${ID}`, {}, build(denyAll));
+
+      expect(res.status).toBe(401);
+      expect(blog.findByIdForAdmin).not.toHaveBeenCalled();
     });
   });
 

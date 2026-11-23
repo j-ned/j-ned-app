@@ -1,12 +1,6 @@
 import type { BlogPost, BlogPostInput } from '@features/blog/domain/models/blog-post.model';
 import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
-import {
-  findPostById,
-  toPostDraft,
-  toPostInput,
-  toPreviewPost,
-  type PostDraft,
-} from './post-draft';
+import { toPostDraft, toPostInput, toPreviewPost, type PostDraft } from './post-draft';
 
 const SAVED = makeBlogPost({
   id: 'b-1',
@@ -163,27 +157,4 @@ describe('toPreviewPost', () => {
       expect(toPreviewPost({ ...toPostDraft(SAVED), [field]: value }, SAVED)[field]).toBe(value);
     },
   );
-});
-
-describe('findPostById', () => {
-  const POSTS = [
-    makeBlogPost({ id: 'b-1', title: 'Premier' }),
-    makeBlogPost({ id: 'b-2', title: 'Second' }),
-  ];
-
-  it.each([
-    { posts: POSTS, id: 'b-2', title: 'Second' },
-    { posts: POSTS, id: 'b-1', title: 'Premier' },
-    { posts: POSTS, id: 'b-9', title: null },
-    { posts: [], id: 'b-1', title: null },
-  ])(
-    'Given $posts.length articles When $id is looked for Then the article found is $title',
-    ({ posts, id, title }) => {
-      expect(findPostById(posts, id)?.title ?? null).toBe(title);
-    },
-  );
-
-  it('Given the list When an article is found Then it is the listed object itself', () => {
-    expect(findPostById(POSTS, 'b-2')).toBe(POSTS[1]);
-  });
 });

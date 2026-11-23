@@ -1,4 +1,4 @@
-import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
+import type { BlogPostSummary } from '@features/blog/domain/models/blog-post.model';
 import type { FilterOption } from '@shared/ui/filter-group';
 import { readingTimeMinutes } from '@features/blog/domain/reading-time';
 import { isPublished } from '@features/blog/domain/publication-order';
@@ -15,7 +15,7 @@ export type AdminPostRowView = {
   readonly title: string;
   readonly subjects: string;
   readonly cover: string;
-  readonly status: BlogPost['status'];
+  readonly status: BlogPostSummary['status'];
   readonly publishedAt: string | null;
   readonly readingTime: string;
   readonly likes: number;
@@ -26,7 +26,7 @@ type AdminPostsView = {
   readonly rows: readonly AdminPostRowView[];
 };
 
-function toRow(post: BlogPost): AdminPostRowView {
+function toRow(post: BlogPostSummary): AdminPostRowView {
   return {
     id: post.id,
     slug: post.slug,
@@ -41,18 +41,18 @@ function toRow(post: BlogPost): AdminPostRowView {
 }
 
 function sortByPublication(
-  posts: readonly BlogPost[],
+  posts: readonly BlogPostSummary[],
   sortDir: PostsSortDirection,
-): readonly BlogPost[] {
+): readonly BlogPostSummary[] {
   const sign = sortDir === 'descending' ? -1 : 1;
-  const time = (post: BlogPost): number => Date.parse(post.publishedAt ?? '');
+  const time = (post: BlogPostSummary): number => Date.parse(post.publishedAt ?? '');
   const dated = posts.filter((post) => post.publishedAt !== null);
   const undated = posts.filter((post) => post.publishedAt === null);
   return [...[...dated].sort((a, b) => sign * (time(a) - time(b))), ...undated];
 }
 
 export function toAdminPostsView(
-  posts: readonly BlogPost[],
+  posts: readonly BlogPostSummary[],
   filter: AdminPostsFilter,
   sortDir: PostsSortDirection,
 ): AdminPostsView {

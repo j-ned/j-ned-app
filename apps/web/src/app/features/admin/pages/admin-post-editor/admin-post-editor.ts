@@ -27,12 +27,7 @@ import {
   type EditedVersion,
 } from '../../application/newer-version-check';
 import type { FormTocSection } from '../../application/form-toc-entries';
-import {
-  findPostById,
-  toPostDraft,
-  toPreviewPost,
-  type PostDraft,
-} from '../../application/post-draft';
+import { toPostDraft, toPreviewPost, type PostDraft } from '../../application/post-draft';
 import { isStaleVersion } from '../../application/is-stale-version';
 import { isTitleTaken } from '../../application/is-title-taken';
 import { knownTags } from '../../application/tag-suggestions';
@@ -112,7 +107,7 @@ const POST_EDITOR_COPY: AdminEditorCopy = {
       [reloaded]="newerVersion.reloaded()"
       [overwriteAsked]="newerVersion.overwrite.asked()"
       [changes]="draft.changes()"
-      (retry)="postsResource.reload()"
+      (retry)="postResource.reload()"
       (leaveAnswered)="draft.leave.answer($event)"
       (reloadLatest)="newerVersion.reload()"
       (overwriteAnswered)="newerVersion.overwrite.answer($event)"
@@ -152,21 +147,18 @@ export class AdminPostEditor implements LeaveConfirmable {
 
   protected readonly POST_EDITOR_COPY = POST_EDITOR_COPY;
 
-  // Lue aussi pour un nouvel article : ses tags alimentent les suggestions du champ Tags.
-  protected readonly postsResource = rxResource({
-    params: () => ({ id: this.id() }),
-    stream: () => this.gateway.getAllPostsForAdmin(),
+  protected readonly postResource = rxResource({
+    params: () => this.id(),
+    stream: ({ params }) => this.gateway.getAdminPost(params),
   });
 
-  private readonly loaded = computed(() => {
-    const id = this.id();
-    return id && this.postsResource.hasValue()
-      ? findPostById(this.postsResource.value(), id)
-      : null;
-  });
+  // Lue aussi pour un nouvel article : ses tags alimentent les suggestions du champ Tags.
+  private readonly postsResource = rxResource({ stream: () => this.gateway.getAllPostsForAdmin() });
+
+  private readonly loaded = computed(() => resourceValueOr(this.postResource, null));
 
   protected readonly state = computed(() =>
-    this.id() ? loadState(this.postsResource, () => this.loaded() === null) : 'ready',
+    this.id() ? loadState(this.postResource, () => this.loaded() === null) : 'ready',
   );
   protected readonly draft = new EditorDraft({
     loaded: this.loaded,
@@ -177,8 +169,9 @@ export class AdminPostEditor implements LeaveConfirmable {
     edited: (): EditedVersion | null => editedVersion(this.draft.saved()),
     readLatest: (id): Observable<number | null> =>
       this.gateway.getLatestAdminPost(id).pipe(map((post) => post?.version ?? null)),
-    // L'article vient de la liste partagée : la relire recharge l'éditeur et les autres écrans.
-    reload: (): void => this.gateway.invalidateAdminPosts(),
+    reload: (): void => {
+      this.postResource.reload();
+    },
     paused: this.draft.saving,
     dirty: (): boolean => this.draft.changes() > 0,
   });
@@ -231,7 +224,7 @@ export class AdminPostEditor implements LeaveConfirmable {
         ),
       });
     }
-    if (cover.status === 'sent' && id) this.postsResource.reload();
+    if (cover.status === 'sent' && id) this.postResource.reload();
     this.toast.add({ severity: 'success', detail: 'Article enregistré' });
     if (!id) await this.router.navigate(['/admin/blog', saved.id], { replaceUrl: true });
   }

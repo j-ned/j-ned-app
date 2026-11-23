@@ -1,21 +1,16 @@
 import { ViewportScroller } from '@angular/common';
 import { Component, DestroyRef, computed, inject, signal } from '@angular/core';
-import { rxResource, toSignal } from '@angular/core/rxjs-interop';
+import { toSignal } from '@angular/core/rxjs-interop';
 import { Router, RouterOutlet } from '@angular/router';
 import { map } from 'rxjs';
 import { AuthStore } from '@core/auth/auth-store';
 import { navigationEnd$ } from '@core/navigation/navigation-end';
 import { ThemeStore } from '@core/theme/theme-store';
-import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
-import { refreshAdminWhenVisible } from '../../application/refresh-admin-when-visible';
-import { CommentsGateway } from '@features/comments/infra/comments.gateway';
-import { ContactGateway } from '@features/contact/domain/gateways/contact.gateway';
-import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { AppIcon } from '@shared/icons/app-icon';
 import { Drawer } from '@shared/ui/drawer';
-import { resourceValueOr } from '@shared/ui/load-state';
 import { AdminNav } from '../../application/components/admin-nav';
 import { activeNavLabel, adminNavGroups } from '../../application/admin-nav-groups';
+import { AdminNavCounters } from './admin-nav-counters';
 
 // `scrollToAnchor` ignore `scroll-margin` : l'écart sous le haut passe par le scroller.
 const ANCHOR_OFFSET: [number, number] = [0, 24];
@@ -103,45 +98,24 @@ export class AdminLayout {
   protected readonly auth = inject(AuthStore);
   protected readonly theme = inject(ThemeStore);
   private readonly _router = inject(Router);
-  private readonly _projectsGateway = inject(ProjectsGateway);
-  private readonly _blogGateway = inject(BlogGateway);
-  private readonly _contactGateway = inject(ContactGateway);
-  private readonly _commentsGateway = inject(CommentsGateway);
   private readonly _viewportScroller = inject(ViewportScroller);
 
   protected readonly menuOpen = signal(false);
 
-  private readonly _projects = rxResource({ stream: () => this._projectsGateway.getAllProjects() });
-  private readonly _posts = rxResource({ stream: () => this._blogGateway.getAllPostsForAdmin() });
-  private readonly _unread = rxResource({ stream: () => this._contactGateway.getUnreadCount() });
-  private readonly _pendingComments = rxResource({
-    stream: () => this._commentsGateway.getPendingCount(),
-  });
+  private readonly _counters = new AdminNavCounters();
 
   private readonly _url = toSignal(
     navigationEnd$(this._router).pipe(map((event) => event.urlAfterRedirects)),
     { initialValue: this._router.url },
   );
 
-  protected readonly groups = computed(() =>
-    adminNavGroups({
-      projects: resourceValueOr(this._projects, null)?.length ?? null,
-      posts: resourceValueOr(this._posts, null)?.length ?? null,
-      unread: resourceValueOr(this._unread, null),
-      pendingComments: resourceValueOr(this._pendingComments, null),
-    }),
-  );
+  protected readonly groups = computed(() => adminNavGroups(this._counters.counts()));
 
   protected readonly topbarTitle = computed(() => activeNavLabel(this.groups(), this._url()));
 
   protected readonly email = computed(() => this.auth.currentUser()?.email);
 
   constructor() {
-    // Messages et commentaires arrivent des visiteurs : la navigation les recompte au retour.
-    refreshAdminWhenVisible(() => {
-      this._contactGateway.invalidateUnreadCount();
-      this._commentsGateway.invalidatePendingCount();
-    });
     this._viewportScroller.setOffset(ANCHOR_OFFSET);
     inject(DestroyRef).onDestroy(() => this._viewportScroller.setOffset([0, 0]));
   }
