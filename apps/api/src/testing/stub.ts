@@ -14,3 +14,10 @@ export function stubFn<F extends (...args: never[]) => unknown>(): jest.Mock<
 > {
   return jest.fn<ReturnType<F>, Parameters<F>>();
 }
+
+// Méthode qu'un scénario ne doit jamais atteindre : l'appeler fait échouer le test bruyamment.
+export function notStubbed(method: string): () => never {
+  return () => {
+    throw new Error(`${method} is not stubbed in this test`);
+  };
+}

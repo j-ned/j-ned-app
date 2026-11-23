@@ -2,9 +2,7 @@ import type { RequireAuth } from '../auth/require-auth';
 import { ConflictException } from '../common/http-errors';
 import { IMAGE_UPLOAD } from '../common/http';
 import { testApp } from '../testing/test-app';
-import type { ProfilePortraitService } from './profile-portrait.service';
 import { profileRoutes } from './profile.routes';
-import type { ProfileService } from './profile.service';
 import { aProfileContent } from '../testing/profile-test-builders';
 import { passThrough } from '../testing/require-auth';
 
@@ -34,14 +32,7 @@ describe('profile routes', () => {
   const profile = { findCurrent: jest.fn(), replace: jest.fn() };
   const portrait = { replace: jest.fn(), remove: jest.fn() };
   const appWith = (requireAuth: RequireAuth) =>
-    testApp(
-      '/api/profile',
-      profileRoutes(
-        profile as unknown as ProfileService,
-        portrait as unknown as ProfilePortraitService,
-        requireAuth,
-      ),
-    );
+    testApp('/api/profile', profileRoutes(profile, portrait, requireAuth));
   let app: ReturnType<typeof appWith>;
 
   beforeEach(() => {

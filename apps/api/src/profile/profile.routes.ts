@@ -13,8 +13,8 @@ import type { ProfilePortraitService } from './profile-portrait.service';
 import type { ProfileService } from './profile.service';
 
 export function profileRoutes(
-  profile: ProfileService,
-  portrait: ProfilePortraitService,
+  profile: Pick<ProfileService, 'findCurrent' | 'replace'>,
+  portrait: Pick<ProfilePortraitService, 'replace' | 'remove'>,
   requireAuth: RequireAuth,
 ): Hono<AppEnv> {
   return (
