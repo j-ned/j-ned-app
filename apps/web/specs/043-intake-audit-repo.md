@@ -185,3 +185,24 @@ leur quota par compte. F007 est clos comme « écarté ».
 - F006 : on ne sait pas encore si l'API de production tourne sous le rôle restreint ; la bascule et
   l'étape « Contract » attendent une vérification dans Dokploy.
 - Lots lancés : CI et infrastructure, API, front, docs et observabilité, chacun dans sa PR.
+
+## Suivi du lot « docs et observabilité » (branche `chore/audit-043-docs-observabilite`)
+
+- **F001 : soldé.** `@sentry/node` 11.16.0 (version de l'API), externe au bundle serveur, initialisé
+  par `server.ts` seulement si `SENTRY_SSR_DSN` est fourni au service `portfolio-web`. Sont envoyées :
+  les erreurs qui font échouer le rendu (500), celles des flux (503), et les exceptions Angular du
+  rendu serveur (template, effet), par un `ErrorHandler` serveur (`app.config.server.ts`) qui passe
+  par le même client via `REQUEST_CONTEXT` ; le navigateur garde son handler. Le journal du conteneur
+  reste écrit. Nettoyage partagé avec le navigateur (`scrub-event.ts` : IP, cookies, en-têtes
+  d'authentification, query strings et fragments, y compris dans le texte des erreurs), sans fil
+  d'Ariane console ni session par requête. Release explicite (`APP_RELEASE` passé par `web-ci.yml`),
+  jamais devinée de l'environnement. Preuve : erreurs provoquées sur l'image, reçues nettoyées par un
+  récepteur local.
+- **F020 : soldé.** La release Sentry du navigateur est celle du build du site (`define` de
+  `APP_RELEASE`), plus celle de `/api/config`, dont la réponse passe par une garde de forme.
+- **F017 : soldé.** ADR-0040 et ADR-0041 acceptés et appliqués (2026-11-22).
+- **F018 : soldé.** README (Node 26, Vitest 5, micro-cache nginx) et profil (`pnpm@10.33.2`).
+- **Reste à faire.** Renseigner `SENTRY_SSR_DSN` dans Dokploy (onglet Environment du service
+  Compose). F004 (sonde de version après déploiement) peut s'appuyer sur la release du site, mais le
+  site ne l'expose pas encore à une sonde. Une session de processus part à chaque démarrage de Node
+  (intégration par défaut du SDK, gardée).

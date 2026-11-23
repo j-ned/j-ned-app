@@ -184,7 +184,8 @@ runtime` pour `InMemoryHomeGateway`, seul in-memory encore câblé en
 - **Réversibilité d'un déploiement** : `manuel`. Un merge sur `master` publie les images sur GHCR
   (tags `latest` et `sha-<commit>`) et Dokploy les tire ; revenir en arrière = redéployer en fixant
   le tag `sha-<commit>` précédent (ADR-0038).
-- **Monitoring d'erreurs runtime** : Sentry (`@sentry/angular`).
+- **Monitoring d'erreurs runtime** : Sentry (`@sentry/angular` dans le navigateur ; `@sentry/node`
+  dans le rendu serveur, actif seulement si `SENTRY_SSR_DSN` est fourni au conteneur du site).
 - **État persistant / migrations** : `localStorage`, sans schéma versionné : thème
   (`core/theme/theme-store.ts`), indice de session `auth:session` (`core/auth/auth-store.ts` ; le cookie httpOnly reste la source de vérité), exclusion
   de l'appareil des statistiques (`core/analytics/analytics-device-exclusion.ts`), « j'aime » d'un
