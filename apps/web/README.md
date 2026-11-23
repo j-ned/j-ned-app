@@ -190,7 +190,7 @@ providers: [
 - Images stockées en **AVIF ≤ 1600 px** par l'API à l'upload, clés dérivées du contenu et cache immuable d'un an.
 - Assets hachés servis avec `Cache-Control: immutable`, gzip, préchargement sélectif des routes.
 - `<title>`, meta, Open Graph et format de carte (`twitter:card`) par route ; JSON-LD `Person`, `BreadcrumbList`, `BlogPosting` et `CreativeWork` ; canonical par page.
-- `sitemap.xml` et `rss.xml` rendus à la requête par le serveur Node (`src/server/feeds/`) depuis l'API : une écriture admin y apparaît au rechargement ; API en panne, le CDN sert la dernière copie.
+- `sitemap.xml` et `rss.xml` rendus à la requête par le serveur Node (`src/server/feeds/`) depuis l'API : une écriture admin y apparaît au rechargement ; API en panne, le micro-cache nginx sert la dernière copie (ADR-0038).
 
 ---
 
@@ -200,8 +200,8 @@ providers: [
 
 - **Angular 22** : zoneless, signals, `@defer`, hydratation incrémentale, `httpResource` / `rxResource`, Signal Forms.
 - **Tailwind CSS v4** en CSS-first (`@theme`, `@utility`), aucun fichier de style par composant.
-- **Chart.js** pour les graphiques du back-office, **marked** + **DOMPurify** pour le Markdown, **Sentry** pour les erreurs.
-- **Vitest 4** + happy-dom pour les tests, **ESLint** + angular-eslint + Prettier, Husky + lint-staged.
+- **Chart.js** pour les graphiques du back-office, **marked** + **DOMPurify** pour le Markdown, **Sentry** pour les erreurs (navigateur, et rendu serveur si `SENTRY_SSR_DSN` est fourni).
+- **Vitest 5** + happy-dom pour les tests, **ESLint** + angular-eslint + Prettier, Husky + lint-staged.
 
 ### API ([`apps/api`](../api))
 
@@ -245,7 +245,7 @@ providers: [
 
 ## Installation
 
-> Prérequis : Node.js 22, pnpm ≥ 10, et l'API du monorepo ([`apps/api`](../api)) lancée sur `http://localhost:3000` (`pnpm dev:api` à la racine, Postgres en conteneur).
+> Prérequis : Node.js 26, pnpm ≥ 10, et l'API du monorepo ([`apps/api`](../api)) lancée sur `http://localhost:3000` (`pnpm dev:api` à la racine, Postgres en conteneur).
 
 ```bash
 git clone https://github.com/j-ned/j-ned-app.git

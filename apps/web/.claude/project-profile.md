@@ -11,7 +11,7 @@
 
 ## Gestionnaire de paquets & commandes canoniques (gates)
 
-- **Gestionnaire** : `pnpm`, version `≥ 10.22` (`packageManager: pnpm@10.22.0`).
+- **Gestionnaire** : `pnpm`, version `≥ 10.33` (`packageManager: pnpm@10.33.2` à la racine du monorepo).
   Binaire installé : `pnpm exec <cmd>` ; ad-hoc : `pnpm dlx <pkg>`. **Aucune**
   autre commande ne franchit les gates.
 - **test** (source de vérité du typecheck) : `pnpm test` (`ng test`, builder
