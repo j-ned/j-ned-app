@@ -1,7 +1,7 @@
 import { beforeAll, describe, expect, it } from 'vitest';
 import { expectApiError } from './api-error';
 import { newVisitor } from './client';
-import { ADMIN_ROUTES, PUBLIC_READ_ROUTES, type Route } from './routes';
+import { ADMIN_ROUTES, ID, PUBLIC_READ_ROUTES, type Route } from './routes';
 import { adminSession } from './session';
 
 const label = (route: Route): string => `${route.method} ${route.path}`;
@@ -55,7 +55,9 @@ describe('access to every route', () => {
         session,
       });
 
-      expect(response.status, response.text).toBe(200);
+      // L'id de l'inventaire n'existe pas : la lecture d'une entité passe l'accès, puis répond 404.
+      if (route.path.includes(ID)) expectApiError(response, 404, route.path);
+      else expect(response.status, response.text).toBe(200);
     });
   });
 

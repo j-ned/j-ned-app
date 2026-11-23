@@ -51,9 +51,14 @@ function blogPostsRoutes(blog: BlogService, requireAuth: RequireAuth) {
         ),
       )
 
-      // Tous les articles, brouillons compris (admin).
+      // Tous les articles, brouillons compris, sans leur corps (admin).
       .get('/admin', throttleSession(requireAuth), async (c) =>
-        reply(c, await blog.findAllForAdmin()),
+        reply(c, await blog.findAdminSummaries()),
+      )
+
+      // Un article, brouillon compris, avec son corps et sa version en `ETag` (admin).
+      .get('/admin/:id', throttleSession(requireAuth), async (c) =>
+        replyVersioned(c, await blog.findByIdForAdmin(uuidParam(c, 'id'))),
       )
 
       // Article publié par slug (public), 404 sinon.

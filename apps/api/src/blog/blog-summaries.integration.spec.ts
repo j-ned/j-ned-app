@@ -107,5 +107,40 @@ const BODIES = [
 
       expect(dates).toEqual([...dates].sort((a, b) => b - a));
     });
+
+    it('Given published posts and a draft, When the admin summaries are listed, Then each is its full post read by id without the body, drafts included', async () => {
+      const summaries = await blog.findAdminSummaries();
+      const full = await Promise.all(
+        summaries.map((summary) => blog.findByIdForAdmin(summary.id)),
+      );
+
+      expect({
+        count: summaries.length,
+        drafts: summaries.filter((post) => post.status === 'draft').length,
+        withBody: summaries.filter((post) => 'contentMarkdown' in post).length,
+        summaries,
+      }).toEqual({
+        count: BODIES.length + 1,
+        drafts: 1,
+        withBody: 0,
+        summaries: full.map((post) => ({
+          ...post,
+          contentMarkdown: undefined,
+        })),
+      });
+    });
+
+    it('Given posts, When the admin summaries are listed, Then they come most recently created first', async () => {
+      const summaries = await blog.findAdminSummaries();
+      const dates = summaries.map((post) => post.createdAt.getTime());
+
+      expect(dates).toEqual([...dates].sort((a, b) => b - a));
+    });
+
+    it('Given an unknown id, When it is read for the admin, Then 404', async () => {
+      await expect(blog.findByIdForAdmin(randomUUID())).rejects.toMatchObject({
+        status: 404,
+      });
+    });
   },
 );

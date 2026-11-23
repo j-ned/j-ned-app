@@ -28,6 +28,22 @@ import {
   versionedRow,
 } from '../common/entity-version';
 
+const SUMMARY_COLUMNS = {
+  id: blogPosts.id,
+  title: blogPosts.title,
+  slug: blogPosts.slug,
+  excerpt: blogPosts.excerpt,
+  coverImage: blogPosts.coverImage,
+  tags: blogPosts.tags,
+  status: blogPosts.status,
+  likesCount: blogPosts.likesCount,
+  version: blogPosts.version,
+  publishedAt: blogPosts.publishedAt,
+  createdAt: blogPosts.createdAt,
+  updatedAt: blogPosts.updatedAt,
+  wordCount: sqlWordCount(blogPosts.contentMarkdown),
+};
+
 const STALE_POST =
   'Une version plus récente de cet article a été enregistrée ailleurs : recharge-le avant d’enregistrer.';
 
@@ -53,33 +69,24 @@ export class BlogService {
   // Même liste sans les corps Markdown, jamais lus : le nombre de mots est compté par Postgres.
   async findPublishedSummaries(): Promise<BlogPostSummary[]> {
     const rows = await this.db
-      .select({
-        id: blogPosts.id,
-        title: blogPosts.title,
-        slug: blogPosts.slug,
-        excerpt: blogPosts.excerpt,
-        coverImage: blogPosts.coverImage,
-        tags: blogPosts.tags,
-        status: blogPosts.status,
-        likesCount: blogPosts.likesCount,
-        version: blogPosts.version,
-        publishedAt: blogPosts.publishedAt,
-        createdAt: blogPosts.createdAt,
-        updatedAt: blogPosts.updatedAt,
-        wordCount: sqlWordCount(blogPosts.contentMarkdown),
-      })
+      .select(SUMMARY_COLUMNS)
       .from(blogPosts)
       .where(eq(blogPosts.status, 'published'))
       .orderBy(desc(blogPosts.publishedAt));
-    return rows.map((r) => ({ ...r, coverImage: this.coverUrl(r.coverImage) }));
+    return rows.map((r) => this.toSummary(r));
   }
 
-  async findAllForAdmin(): Promise<BlogPostResponse[]> {
+  // Brouillons compris : l'éditeur lit le corps d'un seul article, par `findByIdForAdmin`.
+  async findAdminSummaries(): Promise<BlogPostSummary[]> {
     const rows = await this.db
-      .select()
+      .select(SUMMARY_COLUMNS)
       .from(blogPosts)
       .orderBy(desc(blogPosts.createdAt));
-    return rows.map((r) => this.toResponse(r));
+    return rows.map((r) => this.toSummary(r));
+  }
+
+  async findByIdForAdmin(id: string): Promise<BlogPostResponse> {
+    return this.toResponse(await this.findByIdRaw(id));
   }
 
   async findBySlug(slug: string): Promise<BlogPostResponse> {
@@ -262,6 +269,10 @@ export class BlogService {
       coverImage: this.coverUrl(p.coverImage),
       wordCount: countWords(p.contentMarkdown),
     };
+  }
+
+  private toSummary(r: BlogPostSummary): BlogPostSummary {
+    return { ...r, coverImage: this.coverUrl(r.coverImage) };
   }
 
   private coverUrl(key: string): string {

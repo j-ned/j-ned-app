@@ -31,6 +31,7 @@ describe.each([
     patch: (text: string) => ({ excerpt: text }),
     publicRead: (created: ApiResponse) => `/api/blog/posts/${String(field(created, 'slug'))}`,
     lists: ['/api/blog/posts', '/api/blog/posts/admin'],
+    editorRead: (created: ApiResponse) => `/api/blog/posts/admin/${String(field(created, 'id'))}`,
     // Le slug d'un article publié est figé : seul un brouillon prend le slug de son nouveau titre.
     renamable: { status: 'draft' },
   },
@@ -45,9 +46,10 @@ describe.each([
     patch: (text: string) => ({ description: text }),
     publicRead: (created: ApiResponse) => `/api/projects/${String(field(created, 'id'))}`,
     lists: ['/api/projects'],
+    editorRead: (created: ApiResponse) => `/api/projects/${String(field(created, 'id'))}`,
     renamable: {},
   },
-])('$label version', ({ collection, create, patch, publicRead, lists, renamable }) => {
+])('$label version', ({ collection, create, patch, publicRead, lists, editorRead, renamable }) => {
   let session = '';
   let created: ApiResponse;
   let path = '';
@@ -85,6 +87,23 @@ describe.each([
         (entity) => entity['id'] === field(created, 'id'),
       );
       expect(listed?.['version'], list).toBe(field(read, 'version'));
+    }
+  });
+
+  it('Given an entity, When the editor reads it by id, Then it gets the whole entity and its version as ETag', async () => {
+    const read = await admin('GET', editorRead(created));
+
+    expect(read.status, read.text).toBe(200);
+    expect(read.body).toMatchObject(isJson(created.body) ? created.body : {});
+    expect(read.headers.get('etag')).toBe(`"${String(field(read, 'version'))}"`);
+  });
+
+  it('Given an entity, When listed, Then no list carries an article body', async () => {
+    for (const list of lists) {
+      const bodies = records(await admin('GET', list)).filter(
+        (entity) => 'contentMarkdown' in entity,
+      );
+      expect(bodies, list).toEqual([]);
     }
   });
 

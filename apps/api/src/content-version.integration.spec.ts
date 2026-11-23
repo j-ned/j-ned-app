@@ -154,7 +154,7 @@ const aFile = (bytes: string): UploadedFile => ({
 
       expect(created.version).toBe(1);
       expect((await blog.findBySlug(created.slug)).version).toBe(1);
-      const listed = (await blog.findAllForAdmin()).find(
+      const listed = (await blog.findAdminSummaries()).find(
         (post) => post.id === created.id,
       );
       expect(listed?.version).toBe(1);
