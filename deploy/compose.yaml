@@ -147,7 +147,9 @@ services:
         done
 
   portfolio-db:
-    image: postgres:17-alpine
+    # Mineure épinglée pour que Dependabot propose les correctifs de la 17. La majeure se monte à la
+    # main : les fichiers de données exigent un `pg_upgrade` ou un dump restauré.
+    image: postgres:17.12-alpine
     restart: unless-stopped
     <<: *durci
     # Démarrage direct sous `postgres` (uid 70, déjà propriétaire du volume) : sans passage par root,
