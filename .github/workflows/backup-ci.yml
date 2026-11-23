@@ -1,6 +1,6 @@
 name: Backup CI
 
-# Image de sauvegarde de la base (`deploy/backup`, ADR-0038) : construite, puis jugée de bout en bout
+# Image de sauvegarde de la base (`deploy/backup`) : construite, puis jugée de bout en bout
 # devant un Postgres et un stockage S3 jetables (sauvegarde chiffrée, restauration identique, refus
 # d'une mauvaise phrase). Sur master, l'image jugée est publiée sur GHCR.
 on:

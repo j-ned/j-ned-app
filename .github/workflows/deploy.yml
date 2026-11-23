@@ -1,6 +1,6 @@
 name: Deploy
 
-# Demande à Dokploy de redéployer la pile `deploy/compose.yaml` (ADR-0038) : il tire les images que la
+# Demande à Dokploy de redéployer la pile `deploy/compose.yaml` : il tire les images que la
 # CI vient de publier sur GHCR et ne construit rien. Déclenché quand une CI qui publie une image se
 # termine avec succès sur master, quand le compose change, ou à la main. Sans les secrets Dokploy,
 # rien n'est déclenché : c'est leur présence qui met le déploiement en service.

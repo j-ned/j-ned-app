@@ -1,7 +1,7 @@
 name: Web CI
 
-# Lint, tests et build de production d'un côté ; de l'autre, l'image du conteneur (nginx devant Node,
-# ADR-0038) construite et jugée par le smoke test devant la doublure de l'API. Sur master, l'image
+# Lint, tests et build de production d'un côté ; de l'autre, l'image du conteneur (nginx devant Node)
+# construite et jugée par le smoke test devant la doublure de l'API. Sur master, l'image
 # jugée est publiée sur GHCR ; le workflow `Deploy` demande ensuite à Dokploy de la tirer.
 on:
   pull_request:

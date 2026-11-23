@@ -2,7 +2,7 @@ name: API CI
 
 # Sur une PR : lint, types, tests sur Postgres, build, puis l'API construite, lancée par Node en mode
 # production, passe la suite de parité HTTP (packages/api-parity). En parallèle, l'image du conteneur
-# (ADR-0038) est construite, ses migrations jouées sur un Postgres jetable, sa sonde interrogée et le rôle
+# est construite, ses migrations jouées sur un Postgres jetable, sa sonde interrogée et le rôle
 # Postgres applicatif (deploy/postgres) jugé devant elle ; sur master, elle est publiée sur GHCR, puis le
 # workflow `Deploy` demande à Dokploy de la tirer.
 on:

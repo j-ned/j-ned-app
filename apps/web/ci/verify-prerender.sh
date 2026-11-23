@@ -26,7 +26,7 @@ visit("server.mjs");
 ' "$server"
 # Sitemap et RSS sont rendus à la requête par Node : aucun fichier figé au build
 test ! -f $browser/sitemap.xml && test ! -f $browser/rss.xml
-# Pages statiques prérendues (offres et rendez-vous retirés, spec 029 : aucun fichier ne doit rester)
+# Pages statiques prérendues ; offres et rendez-vous retirés : aucun fichier ne doit rester
 test -f $browser/mentions-legales/index.html && test -f $browser/confidentialite/index.html
 test ! -e $browser/offres && test ! -e $browser/rendez-vous
 # postbuild : la CSP des pages prérendues est hachée par page, plus d'unsafe-inline.
