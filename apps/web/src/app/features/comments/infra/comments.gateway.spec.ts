@@ -1,6 +1,7 @@
 import { provideHttpClient } from '@angular/common/http';
 import { HttpTestingController, provideHttpClientTesting } from '@angular/common/http/testing';
 import { TestBed } from '@angular/core/testing';
+import { HttpErrorResponse } from '@angular/common/http';
 import { firstValueFrom, type Observable } from 'rxjs';
 import { SKIP_ERROR_TOAST } from '@core/interceptors/skip-error-toast';
 import { API_BASE_URL } from '@shared/api/api-config';
@@ -14,7 +15,6 @@ import {
   toAdminCommentDto,
   toPublicCommentPageDto,
 } from '../testing/comment-builders';
-import { ModerationError } from '../domain/moderation-error';
 import { CommentsGateway } from './comments.gateway';
 
 const PENDING_COUNT_URL = '/api/blog/comments/pending-count';
@@ -117,9 +117,6 @@ describe('CommentsGateway: écritures de l’admin', () => {
 
   afterEach(() => http.verify());
 
-  const reasonOf = (error: unknown): unknown =>
-    error instanceof ModerationError ? error.reason : error;
-
   it('Given a pending comment When it is published Then the API is asked to publish it, silently, and the published comment comes back', async () => {
     const published = makeAdminComment({ id: 'c-7', status: 'published' });
     const result = firstValueFrom(gateway.publish('c-7'));
@@ -134,23 +131,32 @@ describe('CommentsGateway: écritures de l’admin', () => {
 
     expect({ sent, result: await result }).toEqual({
       sent: { method: 'PATCH', body: { status: 'published' }, silent: true },
-      result: published,
+      result: { success: true, data: published },
     });
   });
 
   it.each([
-    { status: 404, reason: 'not-found' },
-    { status: 409, reason: 'conflict' },
-    { status: 500, reason: 'failed' },
-    { status: 0, reason: 'failed' },
+    { status: 404, error: 'not-found' },
+    { status: 409, error: 'conflict' },
   ] as const)(
-    'Given the API answers $status When a comment is published Then the failure is a moderation error « $reason »',
-    async ({ status, reason }) => {
-      const result = firstValueFrom(gateway.publish('c-7')).catch(reasonOf);
+    'Given the API answers $status When a comment is published Then the refusal comes back as « $error », never as an error',
+    async ({ status, error }) => {
+      const result = firstValueFrom(gateway.publish('c-7'));
 
       http.expectOne('/api/blog/comments/c-7').flush('nope', { status, statusText: 'Nope' });
 
-      expect(await result).toBe(reason);
+      await expect(result).resolves.toEqual({ success: false, error });
+    },
+  );
+
+  it.each([500, 0])(
+    'Given the API answers %i When a comment is published Then the outage stays an error',
+    async (status) => {
+      const result = firstValueFrom(gateway.publish('c-7'));
+
+      http.expectOne('/api/blog/comments/c-7').flush('nope', { status, statusText: 'Nope' });
+
+      await expect(result).rejects.toBeInstanceOf(HttpErrorResponse);
     },
   );
 });
@@ -174,7 +180,7 @@ describe('CommentsGateway: suppression', () => {
   afterEach(() => http.verify());
 
   it('Given a comment When it is removed Then the API is asked to delete it, silently', async () => {
-    const done = firstValueFrom(gateway.remove('c-7'), { defaultValue: 'completed' });
+    const done = firstValueFrom(gateway.remove('c-7'));
 
     const req = http.expectOne('/api/blog/comments/c-7');
     const sent = { method: req.request.method, silent: req.request.context.get(SKIP_ERROR_TOAST) };
@@ -182,25 +188,25 @@ describe('CommentsGateway: suppression', () => {
 
     expect({ sent, done: await done }).toEqual({
       sent: { method: 'DELETE', silent: true },
-      done: null,
+      done: { success: true, data: undefined },
     });
   });
 
-  it.each([
-    { status: 404, reason: 'not-found' },
-    { status: 500, reason: 'failed' },
-  ] as const)(
-    'Given the API answers $status When a comment is removed Then the failure is a moderation error « $reason »',
-    async ({ status, reason }) => {
-      const result = firstValueFrom(gateway.remove('c-7')).catch((error: unknown) =>
-        error instanceof ModerationError ? error.reason : error,
-      );
+  it('Given the API answers 404 When a comment is removed Then the refusal comes back as « not-found », never as an error', async () => {
+    const result = firstValueFrom(gateway.remove('c-7'));
 
-      http.expectOne('/api/blog/comments/c-7').flush('nope', { status, statusText: 'Nope' });
+    http.expectOne('/api/blog/comments/c-7').flush('nope', { status: 404, statusText: 'Nope' });
 
-      expect(await result).toBe(reason);
-    },
-  );
+    await expect(result).resolves.toEqual({ success: false, error: 'not-found' });
+  });
+
+  it('Given the API answers 500 When a comment is removed Then the outage stays an error', async () => {
+    const result = firstValueFrom(gateway.remove('c-7'));
+
+    http.expectOne('/api/blog/comments/c-7').flush('nope', { status: 500, statusText: 'Nope' });
+
+    await expect(result).rejects.toBeInstanceOf(HttpErrorResponse);
+  });
 });
 
 describe('CommentsGateway: réponse du propriétaire', () => {
@@ -240,28 +246,35 @@ describe('CommentsGateway: réponse du propriétaire', () => {
 
     expect({ sent, result: await result }).toEqual({
       sent: { method: 'POST', body: { body: 'Avec plaisir' }, silent: true },
-      result: reply,
+      result: { success: true, data: reply },
     });
   });
 
   it.each([
-    { status: 404, reason: 'not-found' },
-    { status: 409, reason: 'conflict' },
-    { status: 400, reason: 'failed' },
+    { status: 404, error: 'not-found' },
+    { status: 409, error: 'conflict' },
   ] as const)(
-    'Given the API answers $status When the owner replies Then the failure is a moderation error « $reason »',
-    async ({ status, reason }) => {
-      const result = firstValueFrom(gateway.reply('c-7', 'Oui')).catch((error: unknown) =>
-        error instanceof ModerationError ? error.reason : error,
-      );
+    'Given the API answers $status When the owner replies Then the refusal comes back as « $error », never as an error',
+    async ({ status, error }) => {
+      const result = firstValueFrom(gateway.reply('c-7', 'Oui'));
 
       http
         .expectOne('/api/blog/comments/c-7/replies')
         .flush('nope', { status, statusText: 'Nope' });
 
-      expect(await result).toBe(reason);
+      await expect(result).resolves.toEqual({ success: false, error });
     },
   );
+
+  it('Given the API answers 400 When the owner replies Then the failure stays an error', async () => {
+    const result = firstValueFrom(gateway.reply('c-7', 'Oui'));
+
+    http
+      .expectOne('/api/blog/comments/c-7/replies')
+      .flush('nope', { status: 400, statusText: 'Nope' });
+
+    await expect(result).rejects.toBeInstanceOf(HttpErrorResponse);
+  });
 });
 
 describe('CommentsGateway: lecture publique', () => {

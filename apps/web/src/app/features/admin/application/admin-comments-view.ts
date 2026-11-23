@@ -4,7 +4,7 @@ import type {
   PublicAuthor,
 } from '@features/comments/domain/models/comment.model';
 import { canReply } from '@features/comments/domain/can-reply';
-import type { ModerationFailure } from '@features/comments/domain/moderation-error';
+import type { ModerationFailure } from '@features/comments/domain/moderation-result';
 import { counted } from '@shared/format/counted';
 import type { FilterOption } from '@shared/ui/filter-group';
 import { receivedAgo } from './admin-messages-view';
