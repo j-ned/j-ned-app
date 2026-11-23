@@ -6,10 +6,9 @@ import {
 } from '../common/http-errors';
 import { testApp } from '../testing/test-app';
 import { ADMIN_WRITE_THROTTLE } from '../common/throttle';
-import type { ProjectImagesService } from './project-images.service';
 import { projectsRoutes } from './projects.routes';
-import type { ProjectsService } from './projects.service';
 import { passThrough } from '../testing/require-auth';
+import { notStubbed } from '../testing/stub';
 
 const PROJECT_ID = '11111111-1111-4111-8111-111111111111';
 const IMAGE_ID = '22222222-2222-4222-8222-222222222222';
@@ -49,8 +48,15 @@ describe('project images routes (HTTP)', () => {
     testApp(
       '/api/projects',
       projectsRoutes(
-        {} as ProjectsService,
-        images as unknown as ProjectImagesService,
+        {
+          findAll: notStubbed('findAll'),
+          findById: notStubbed('findById'),
+          create: notStubbed('create'),
+          update: notStubbed('update'),
+          remove: notStubbed('remove'),
+          uploadImage: notStubbed('uploadImage'),
+        },
+        images,
         requireAuth,
       ),
     );

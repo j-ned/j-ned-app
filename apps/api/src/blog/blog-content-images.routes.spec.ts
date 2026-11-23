@@ -2,7 +2,6 @@ import type { UploadedFile } from '../common/http';
 import { UnprocessableEntityException } from '../common/http-errors';
 import { testApp } from '../testing/test-app';
 import { blogContentImagesRoutes } from './blog-content-images.routes';
-import type { BlogContentImagesService } from './blog-content-images.service';
 import { fileForm } from '../testing/multipart';
 import { passThrough } from '../testing/require-auth';
 
@@ -17,10 +16,7 @@ describe('blog content images routes (HTTP)', () => {
   const images = { upload: jest.fn() };
   const app = testApp(
     '/api/blog/content-images',
-    blogContentImagesRoutes(
-      images as unknown as BlogContentImagesService,
-      passThrough,
-    ),
+    blogContentImagesRoutes(images, passThrough),
   );
 
   beforeEach(() => jest.clearAllMocks());

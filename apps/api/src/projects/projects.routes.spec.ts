@@ -6,10 +6,9 @@ import {
   PreconditionFailedException,
 } from '../common/http-errors';
 import { testApp } from '../testing/test-app';
-import type { ProjectImagesService } from './project-images.service';
 import { projectsRoutes } from './projects.routes';
-import type { ProjectsService } from './projects.service';
 import { passThrough } from '../testing/require-auth';
+import { notStubbed } from '../testing/stub';
 
 const ID = '11111111-1111-4111-8111-111111111111';
 const PNG = Buffer.from(
@@ -37,8 +36,13 @@ describe('projects routes (HTTP)', () => {
     testApp(
       '/api/projects',
       projectsRoutes(
-        projects as unknown as ProjectsService,
-        {} as ProjectImagesService,
+        projects,
+        {
+          upload: notStubbed('upload'),
+          reorder: notStubbed('reorder'),
+          updateAlt: notStubbed('updateAlt'),
+          remove: notStubbed('remove'),
+        },
         requireAuth,
       ),
     );

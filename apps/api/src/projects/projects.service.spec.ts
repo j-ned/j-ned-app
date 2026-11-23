@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { createHash } from 'node:crypto';
 import {
   ConflictException,
@@ -9,11 +8,12 @@ import {
 import { Logger } from '../common/logger';
 import { ProjectsService } from './projects.service';
 import type { UploadedFile } from '../common/http';
+import { asDatabase } from '../testing/mock-database';
 import { createMockDb } from '../testing/test-utils';
-import { StorageService } from '../storage/storage.service';
-import { ImageOptimizer } from '../storage/image-optimizer.service';
+import type { StorageService } from '../storage/storage.service';
+import type { ImageOptimizer } from '../storage/image-optimizer.service';
 import type { Project } from '../database/schema';
-import { ProjectImagesService } from './project-images.service';
+import type { ProjectImagesService } from './project-images.service';
 import type { ProjectImageResponse } from './project-gallery';
 import { defined } from '../testing/defined';
 
@@ -27,7 +27,9 @@ const aCover = (): UploadedFile => ({
 describe('ProjectsService', () => {
   let service: ProjectsService;
   let db: ReturnType<typeof createMockDb>;
-  let storage: jest.Mocked<StorageService>;
+  let storage: jest.Mocked<
+    Pick<StorageService, 'upload' | 'delete' | 'getPublicUrl'>
+  >;
   let gallery: jest.Mocked<Pick<ProjectImagesService, 'galleryOf' | 'keysOf'>>;
   let optimizer: jest.Mocked<Pick<ImageOptimizer, 'optimize'>>;
 
@@ -70,11 +72,9 @@ describe('ProjectsService', () => {
     db = createMockDb();
     storage = {
       upload: jest.fn().mockResolvedValue(undefined),
-      get: jest.fn(),
       delete: jest.fn().mockResolvedValue(undefined),
-      list: jest.fn(),
       getPublicUrl: jest.fn().mockReturnValue('https://example.test/url'),
-    } as unknown as jest.Mocked<StorageService>;
+    };
 
     gallery = {
       galleryOf: jest.fn().mockResolvedValue(new Map()),
@@ -90,12 +90,7 @@ describe('ProjectsService', () => {
         height: 900,
       }),
     };
-    service = new ProjectsService(
-      db as never,
-      storage,
-      optimizer as unknown as ImageOptimizer,
-      gallery as unknown as ProjectImagesService,
-    );
+    service = new ProjectsService(asDatabase(db), storage, optimizer, gallery);
   });
 
   describe('findAll', () => {
@@ -167,11 +162,9 @@ describe('ProjectsService', () => {
     it('throw ConflictException quand Drizzle wrappe le PostgresError dans .cause', async () => {
       // Drizzle ≥0.36 wraps the raw pg error in a DrizzleQueryError whose
       // `.cause` holds the PostgresError (code '23505' + constraint_name).
-      const wrappedErr = new Error('Failed query: INSERT INTO ...');
-      (wrappedErr as unknown as Record<string, unknown>).cause = {
-        code: '23505',
-        constraint_name: 'project_slug_unique',
-      };
+      const wrappedErr = new Error('Failed query: INSERT INTO ...', {
+        cause: { code: '23505', constraint_name: 'project_slug_unique' },
+      });
       db.returning.mockRejectedValueOnce(wrappedErr);
       await expect(
         service.create({
@@ -298,11 +291,9 @@ describe('ProjectsService', () => {
     });
 
     it('throw ConflictException quand Drizzle wrappe le PostgresError dans .cause (update)', async () => {
-      const wrappedErr = new Error('Failed query: UPDATE ...');
-      (wrappedErr as unknown as Record<string, unknown>).cause = {
-        code: '23505',
-        constraint_name: 'project_slug_unique',
-      };
+      const wrappedErr = new Error('Failed query: UPDATE ...', {
+        cause: { code: '23505', constraint_name: 'project_slug_unique' },
+      });
       db.limit.mockResolvedValueOnce([mkProject()]);
       db.returning.mockRejectedValueOnce(wrappedErr);
       await expect(

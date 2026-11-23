@@ -1,6 +1,6 @@
 import { computeAggregates } from './analytics-aggregates';
 import { createMockDb } from '../testing/test-utils';
-import type { Database } from '../database/drizzle.types';
+import { asDatabase } from '../testing/mock-database';
 
 const START = new Date('2026-10-09T00:00:00.000Z');
 const END = new Date('2026-10-09T23:59:59.999Z');
@@ -42,7 +42,7 @@ describe('computeAggregates', () => {
   it('Given three visits, When aggregated, Then visits, real bounces and measured durations come from summarizeSessions', async () => {
     mockDay(true);
 
-    const day = await computeAggregates(db as unknown as Database, START, END);
+    const day = await computeAggregates(asDatabase(db), START, END);
 
     expect(day).toMatchObject({
       visitors: 3,
@@ -63,7 +63,7 @@ describe('computeAggregates', () => {
   it('Given no v2 event was ever seen, When aggregated, Then the conversion columns are NULL (non mesuré)', async () => {
     mockDay(false);
 
-    const day = await computeAggregates(db as unknown as Database, START, END);
+    const day = await computeAggregates(asDatabase(db), START, END);
 
     expect(day).toMatchObject({
       contactSubmits: null,
@@ -77,7 +77,7 @@ describe('computeAggregates', () => {
   it('Given a v2 event was seen this day or before, When aggregated, Then conversions are counted and a zero is a real zero', async () => {
     mockDay(true);
 
-    const day = await computeAggregates(db as unknown as Database, START, END);
+    const day = await computeAggregates(asDatabase(db), START, END);
 
     expect(day).toMatchObject({
       contactSubmits: 1,
@@ -94,7 +94,7 @@ describe('computeAggregates', () => {
       .mockResolvedValueOnce([{ measured: false }]);
     db.where.mockResolvedValueOnce([{}]);
 
-    const day = await computeAggregates(db as unknown as Database, START, END);
+    const day = await computeAggregates(asDatabase(db), START, END);
 
     expect(day).toMatchObject({
       sessions: 0,

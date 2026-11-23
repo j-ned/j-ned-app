@@ -12,7 +12,7 @@ const logger = new Logger('AnalyticsSchedule');
 // Suivi par le Sentry Cron Monitor. Un échec est journalisé sans arrêter le process : le passage du
 // lendemain repart normalement.
 export async function runDailyRollup(
-  aggregator: AnalyticsAggregatorService,
+  aggregator: Pick<AnalyticsAggregatorService, 'aggregateYesterday'>,
 ): Promise<void> {
   try {
     await Sentry.withMonitor(

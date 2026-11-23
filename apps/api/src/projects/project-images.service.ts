@@ -49,8 +49,11 @@ async function bumpProjectVersion(
 export class ProjectImagesService {
   constructor(
     private readonly db: Database,
-    private readonly storage: StorageService,
-    private readonly images: ImageOptimizer,
+    private readonly storage: Pick<
+      StorageService,
+      'upload' | 'delete' | 'getPublicUrl'
+    >,
+    private readonly images: Pick<ImageOptimizer, 'optimize'>,
   ) {}
 
   // En une requête : la liste publique n'a pas de N+1.

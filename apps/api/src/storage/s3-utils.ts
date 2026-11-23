@@ -9,7 +9,7 @@ import type { StorageService } from './storage.service';
 
 // DeleteObject est déjà idempotent, mais la garde d'un emplacement vide évite un aller-retour réseau.
 export async function deleteS3IfExists(
-  storage: StorageService,
+  storage: Pick<StorageService, 'delete'>,
   bucket: string,
   key: string | null | undefined,
 ): Promise<void> {
@@ -25,9 +25,9 @@ export function contentHash(buffer: Buffer): string {
 // AVIF ≤ 1600 px quel que soit le format reçu ; clé dérivée du contenu, donc une nouvelle URL par
 // image, servie avec un cache immuable d'un an.
 export async function storeOptimizedImage(
-  storage: StorageService,
+  storage: Pick<StorageService, 'upload'>,
   bucket: string,
-  images: ImageOptimizer,
+  images: Pick<ImageOptimizer, 'optimize'>,
   keyPrefix: string,
   source: Buffer,
 ): Promise<string> {

@@ -1,7 +1,5 @@
 import type { RequireAuth } from '../auth/require-auth';
 import { testApp } from '../testing/test-app';
-import type { AnalyticsStatsService } from './analytics-stats.service';
-import type { AnalyticsTrackerService } from './analytics-tracker.service';
 import { analyticsRoutes } from './analytics.routes';
 import { denyAll, passThrough } from '../testing/require-auth';
 
@@ -21,14 +19,7 @@ describe('analytics routes', () => {
   };
   const tracker = { track: jest.fn() };
   const build = (requireAuth: RequireAuth) =>
-    testApp(
-      '/api/analytics',
-      analyticsRoutes(
-        tracker as unknown as AnalyticsTrackerService,
-        stats as unknown as AnalyticsStatsService,
-        requireAuth,
-      ),
-    );
+    testApp('/api/analytics', analyticsRoutes(tracker, stats, requireAuth));
   const app = build(passThrough);
 
   beforeEach(() => jest.clearAllMocks());

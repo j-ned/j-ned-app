@@ -22,9 +22,23 @@ import type { BlogService } from './blog.service';
 import { createBlogPostSchema } from './dto/create-blog-post.dto';
 import { updateBlogPostSchema } from './dto/update-blog-post.dto';
 
+type BlogPosts = Pick<
+  BlogService,
+  | 'findAllPublished'
+  | 'findPublishedSummaries'
+  | 'findAdminSummaries'
+  | 'findByIdForAdmin'
+  | 'findBySlug'
+  | 'create'
+  | 'update'
+  | 'remove'
+  | 'uploadCoverImage'
+  | 'like'
+>;
+
 export function blogRoutes(
-  blog: BlogService,
-  contentImages: BlogContentImagesService,
+  blog: BlogPosts,
+  contentImages: Pick<BlogContentImagesService, 'upload'>,
   comments: BlogCommentsService,
   requireAuth: RequireAuth,
 ) {
@@ -38,7 +52,7 @@ export function blogRoutes(
 }
 
 // Les chemins fixes (`/admin`) passent avant `/:slug`.
-function blogPostsRoutes(blog: BlogService, requireAuth: RequireAuth) {
+function blogPostsRoutes(blog: BlogPosts, requireAuth: RequireAuth) {
   return (
     new Hono<AppEnv>()
       // Articles publiés (public), sans leur corps : `?include=content` l'ajoute (flux RSS du site).

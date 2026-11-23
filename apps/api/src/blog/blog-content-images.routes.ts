@@ -5,7 +5,7 @@ import { ADMIN_WRITE_THROTTLE, throttle } from '../common/throttle';
 import type { BlogContentImagesService } from './blog-content-images.service';
 
 export function blogContentImagesRoutes(
-  images: BlogContentImagesService,
+  images: Pick<BlogContentImagesService, 'upload'>,
   requireAuth: RequireAuth,
 ) {
   return new Hono<AppEnv>().post(

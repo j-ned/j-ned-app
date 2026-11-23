@@ -1,37 +1,20 @@
 import { createApp } from './create-app';
-import type { AppConfigService } from './config/app-config.service';
-import type { Database } from './database/drizzle.types';
-import type { Services } from './services';
+import { createServices } from './services';
+import { asDatabase } from './testing/mock-database';
+import { createTestConfig } from './testing/test-config';
+import { createMockDb } from './testing/test-utils';
 
 const ERROR_KEYS = ['error', 'message', 'path', 'statusCode', 'timestamp'];
 const SITE = 'http://localhost:4200';
 
-// Services factices : seul le câblage HTTP commun est éprouvé ici.
+// Vrais services sur une base factice : seul le câblage HTTP commun est éprouvé ici.
 function app() {
-  const contact = { create: jest.fn().mockResolvedValue(undefined) };
-  const blog = {
-    like: jest.fn().mockResolvedValue({ likesCount: 1 }),
-    remove: jest.fn().mockResolvedValue(undefined),
-  };
-  const jwt = { verify: jest.fn() };
-  const users = { findById: jest.fn() };
-  const services = { contact, blog, jwt, users } as unknown as Services;
-  const signIn = () => {
-    jwt.verify.mockReturnValue({ sub: 'u1', tokenVersion: 0 });
-    users.findById.mockResolvedValue({ id: 'u1', tokenVersion: 0 });
-  };
-  const config = {
-    corsOrigins: [SITE],
-    jwtExpiresIn: '7d',
-  } as AppConfigService;
-  const db = {
-    execute: jest.fn().mockResolvedValue([]),
-  } as unknown as Database;
+  const config = createTestConfig({ CORS_ORIGINS: SITE, JWT_EXPIRES_IN: '7d' });
+  const mockDb = createMockDb();
+  mockDb.execute.mockResolvedValue([]);
+  const db = asDatabase(mockDb);
   return {
-    app: createApp(config, db, services),
-    contact,
-    blog,
-    signIn,
+    app: createApp(config, db, createServices({ config, db, s3: null })),
   };
 }
 

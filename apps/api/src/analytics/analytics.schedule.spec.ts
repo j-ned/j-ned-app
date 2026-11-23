@@ -1,17 +1,15 @@
 import { Logger } from '../common/logger';
-import type { AnalyticsAggregatorService } from './analytics-aggregator.service';
 import { runDailyRollup } from './analytics.schedule';
 
 describe('analytics daily rollup schedule', () => {
   const aggregator = {
     aggregateYesterday: jest.fn().mockResolvedValue(undefined),
   };
-  const asAggregator = aggregator as unknown as AnalyticsAggregatorService;
 
   afterEach(() => jest.restoreAllMocks());
 
   it('Given a run, When it fires, Then it aggregates yesterday', async () => {
-    await runDailyRollup(asAggregator);
+    await runDailyRollup(aggregator);
 
     expect(aggregator.aggregateYesterday).toHaveBeenCalledTimes(1);
   });
@@ -20,7 +18,7 @@ describe('analytics daily rollup schedule', () => {
     const error = jest.spyOn(Logger.prototype, 'error').mockImplementation();
     aggregator.aggregateYesterday.mockRejectedValueOnce(new Error('db down'));
 
-    await expect(runDailyRollup(asAggregator)).resolves.toBeUndefined();
+    await expect(runDailyRollup(aggregator)).resolves.toBeUndefined();
 
     expect(error).toHaveBeenCalledWith(
       expect.stringContaining('db down'),
