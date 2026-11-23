@@ -108,6 +108,13 @@ DELETE FROM login_event WHERE kind = 'password_rejected';
 INSERT INTO contact_message (name, email, subject, message) VALUES ('Témoin', 'temoin@parity.test', 'Sujet', 'Message');
 UPDATE contact_message SET read = true;
 DELETE FROM contact_message;
+INSERT INTO blog_post (id, title, slug, excerpt, content_markdown)
+  VALUES ('00000000-0000-4000-8000-000000000001', 'Témoin', 'temoin-role', 'Extrait', 'Corps');
+INSERT INTO blog_comment (post_id, author_kind, author_name, author_email, sender_hash, body)
+  VALUES ('00000000-0000-4000-8000-000000000001', 'visitor', 'Témoin', 'temoin@parity.test', 'check', 'Un commentaire');
+SELECT count(*) FROM blog_comment WHERE status = 'pending';
+UPDATE blog_comment SET status = 'published', moderated_at = now(), sender_hash = NULL;
+DELETE FROM blog_comment;
 SELECT count(*) FROM blog_post;
 SELECT count(*) FROM project;
 SELECT count(*) FROM project_image;
@@ -155,6 +162,7 @@ denied "
   'DROP SCHEMA public CASCADE',
   'TRUNCATE public.page_view',
   'TRUNCATE public.contact_message',
+  'TRUNCATE public.blog_comment',
   'INSERT INTO public.users (email, password_hash) VALUES (''intrus@parity.test'', ''x'')',
   'DELETE FROM public.users',
   'INSERT INTO public.profile_content (id, content) VALUES (''main'', ''{}'')',
@@ -188,6 +196,15 @@ denied "'TRUNCATE public.table_future', 'DROP TABLE public.table_future', 'ALTER
 apply_role "$APP_PASSWORD" >/dev/null
 app_psql -c 'SELECT count(*) FROM table_future' >/dev/null || fail "accès à la nouvelle table perdu en rejouant le script"
 owner_psql -q -c 'DROP TABLE public.table_future'
+
+# Une table que le rôle ne peut pas lire (créée avant les privilèges par défaut, absente de la liste)
+# arrête le script, qui n'applique rien.
+owner_psql -q -c "CREATE TABLE public.table_oubliee (id int); REVOKE ALL ON public.table_oubliee FROM $APP"
+if apply_role "$APP_PASSWORD" >/dev/null 2>&1; then
+  fail "script accepté alors qu'une table de public reste inaccessible au rôle applicatif"
+fi
+owner_psql -q -c 'DROP TABLE public.table_oubliee'
+apply_role "$APP_PASSWORD" >/dev/null
 
 # L'API elle-même, sous le rôle applicatif : sonde (qui interroge la base), lecture publique, écriture
 # publique, tâche quotidienne (agrégat inséré ou mis à jour, purges).
