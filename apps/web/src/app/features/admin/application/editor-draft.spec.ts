@@ -1,5 +1,6 @@
 import { signal, type WritableSignal } from '@angular/core';
 import { TestBed } from '@angular/core/testing';
+import { beforeUnloadEvent } from '@shared/testing/before-unload-event';
 import { EditorDraft, type EditedDraft } from './editor-draft';
 import type { FormTocSection } from './form-toc-entries';
 
@@ -191,11 +192,12 @@ describe('EditorDraft: quitter', () => {
     ({ edited, prevented }) => {
       const { draft } = makeDraft(aNote());
       if (edited) draft.value.update((value) => ({ ...value, title: 'Autre' }));
-      const event = { preventDefault: vi.fn() };
+      const event = beforeUnloadEvent();
+      const preventDefault = vi.spyOn(event, 'preventDefault');
 
-      draft.warnBeforeUnload(event as unknown as BeforeUnloadEvent);
+      draft.warnBeforeUnload(event);
 
-      expect(event.preventDefault).toHaveBeenCalledTimes(prevented);
+      expect(preventDefault).toHaveBeenCalledTimes(prevented);
     },
   );
 });

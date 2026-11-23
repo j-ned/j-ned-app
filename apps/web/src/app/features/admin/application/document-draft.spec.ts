@@ -1,4 +1,5 @@
 import { signal, type WritableSignal } from '@angular/core';
+import { beforeUnloadEvent } from '@shared/testing/before-unload-event';
 import { DocumentDraft } from './document-draft';
 import type { FormTocSection } from './form-toc-entries';
 
@@ -153,16 +154,18 @@ describe('DocumentDraft: quitter', () => {
 
   it('Given the tab about to close When the draft is untouched then edited Then the browser warning is requested only once edited', () => {
     const { draft } = makeDraft(aSheet());
-    const untouched = { preventDefault: vi.fn() };
-    const edited = { preventDefault: vi.fn() };
+    const untouched = beforeUnloadEvent();
+    const edited = beforeUnloadEvent();
+    const untouchedPrevent = vi.spyOn(untouched, 'preventDefault');
+    const editedPrevent = vi.spyOn(edited, 'preventDefault');
 
-    draft.warnBeforeUnload(untouched as unknown as BeforeUnloadEvent);
+    draft.warnBeforeUnload(untouched);
     retitle(draft, 'Autre');
-    draft.warnBeforeUnload(edited as unknown as BeforeUnloadEvent);
+    draft.warnBeforeUnload(edited);
 
     expect({
-      untouched: untouched.preventDefault.mock.calls.length,
-      edited: edited.preventDefault.mock.calls.length,
+      untouched: untouchedPrevent.mock.calls.length,
+      edited: editedPrevent.mock.calls.length,
     }).toEqual({ untouched: 0, edited: 1 });
   });
 });
