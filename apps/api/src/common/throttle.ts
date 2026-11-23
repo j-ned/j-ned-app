@@ -81,8 +81,8 @@ export type ThrottleHit = {
 // En mémoire : l'API tourne en un seul process.
 export interface ThrottleStore {
   hit(key: string, ttlMs: number, now: number): Promise<ThrottleHit>;
-  // Fenêtre en cours sans la compter ; `undefined` si la clé n'en a pas.
-  peek(key: string, now: number): Promise<ThrottleHit | undefined>;
+  // Rend un coup compté par `hit`, seulement si la fenêtre qui l'a compté (`resetAt`) est toujours la même.
+  release(key: string, resetAt: number): Promise<void>;
   reset(key: string): Promise<void>;
 }
 
@@ -125,13 +125,12 @@ export class MemoryThrottleStore implements ThrottleStore {
     return Promise.resolve({ ...opened });
   }
 
-  peek(key: string, now: number): Promise<ThrottleHit | undefined> {
+  release(key: string, resetAt: number): Promise<void> {
     const current = this.scopeOf(key).get(key);
-    return Promise.resolve(
-      current && current.resetAt > now
-        ? { count: current.count, resetAt: current.resetAt }
-        : undefined,
-    );
+    if (current && current.resetAt === resetAt && current.count > 0) {
+      current.count -= 1;
+    }
+    return Promise.resolve();
   }
 
   reset(key: string): Promise<void> {
@@ -251,7 +250,8 @@ export function throttle(
 }
 
 export type SessionThrottleConfig = {
-  readonly anonymous: ThrottleConfig;
+  // Stockage saturé : la vérification de session a lieu sans être comptée (`whenFull: 'allow'`).
+  readonly anonymous: Omit<ThrottleConfig, 'whenFull'>;
   readonly account: ThrottleConfig;
 };
 
@@ -271,12 +271,18 @@ export function throttleSession(
   return async (c, next) => {
     const at = now();
     const addressKey = `${route}|${quotaAddress(clientIp(c))}`;
-    const refusals = await peekHits(addressKey, at);
-    if (refusals && refusals.count >= anonymous.limit) {
-      throw tooManyRequests(c, refusals, at);
+    // Le refus est compté avant la vérification puis rendu si elle aboutit : des requêtes simultanées ne
+    // passent pas toutes la vérification avant que le premier 401 soit compté.
+    const reserved = await countHit(addressKey, anonymous.ttlMs, at);
+    const tracked = reserved?.saturated ? undefined : reserved;
+    if (tracked && tracked.count > anonymous.limit) {
+      throw tooManyRequests(c, tracked, at);
     }
+    let authenticated = false;
     try {
       await requireAuth(c, async () => {
+        authenticated = true;
+        if (tracked) await releaseHit(addressKey, tracked.resetAt);
         const hit = await countHit(
           `${route}:account|${c.var.user.id}`,
           account.ttlMs,
@@ -286,8 +292,13 @@ export function throttleSession(
         await next();
       });
     } catch (error: unknown) {
-      if (error instanceof UnauthorizedException) {
-        await countHit(addressKey, anonymous.ttlMs, at);
+      // Seul un refus de session reste compté contre l'IP, pas une panne de la vérification.
+      if (
+        !authenticated &&
+        tracked &&
+        !(error instanceof UnauthorizedException)
+      ) {
+        await releaseHit(addressKey, tracked.resetAt);
       }
       throw error;
     }
@@ -299,19 +310,12 @@ function nextRoute(): string {
   return `route${routeCount}`;
 }
 
-// Même tolérance que `countHit` : une panne du stockage laisse passer.
-async function peekHits(
-  key: string,
-  at: number,
-): Promise<ThrottleHit | undefined> {
+// Un échec du stockage est journalisé, jamais propagé : le coup reste compté.
+async function releaseHit(key: string, resetAt: number): Promise<void> {
   try {
-    return await store.peek(key, at);
+    await store.release(key, resetAt);
   } catch (error: unknown) {
-    logger.warn(
-      { err: error },
-      'Throttle store unavailable: request let through',
-    );
-    return undefined;
+    logger.warn({ err: error }, 'Throttle store unavailable: hit not released');
   }
 }
 
