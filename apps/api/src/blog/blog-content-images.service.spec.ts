@@ -6,6 +6,7 @@ import { defined } from '../testing/defined';
 import { asDatabase } from '../testing/mock-database';
 import { createMockDb } from '../testing/test-utils';
 import { ImageOptimizer } from '../storage/image-optimizer.service';
+import { notStubbed } from '../testing/stub';
 import { contentHash } from '../storage/s3-utils';
 import { StorageService } from '../storage/storage.service';
 import { BlogContentImagesService } from './blog-content-images.service';
@@ -63,7 +64,12 @@ describe('BlogContentImagesService', () => {
     service = new BlogContentImagesService(
       asDatabase(db),
       Object.assign(new StorageService(null), storage),
-      Object.assign(new ImageOptimizer(), { optimize }),
+      Object.assign(new ImageOptimizer(), {
+        optimize,
+        toWidth: notStubbed('ImageOptimizer.toWidth'),
+        toShareCard: notStubbed('ImageOptimizer.toShareCard'),
+        toPortrait: notStubbed('ImageOptimizer.toPortrait'),
+      }),
     );
   });
 
