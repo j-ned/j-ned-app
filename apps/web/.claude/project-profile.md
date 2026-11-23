@@ -206,6 +206,8 @@ runtime` pour `InMemoryHomeGateway`, seul in-memory encore câblé en
 
 - **Pattern grep d'archéologie** (mécanique, sans jugement) :
   `ADR-[0-9]|spec [0-9]{3}|§ ?[A-Z]|ajouté pour|/\*\*`.
+  S'applique aussi aux commentaires d'infrastructure : `apps/*/ci/`, `deploy/`, `.github/` et les
+  Dockerfiles (les README restent libres de citer un ADR).
 - **Règle** (rappel — universelle) : par défaut **aucun** commentaire ; seul
   légitime = **une ligne** de WHY intemporel non-évident. Interdits : numéro de
   spec/ticket, réf ADR/§, récit de diagnostic/rétro, « ajouté pour X », le QUOI,
