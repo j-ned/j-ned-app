@@ -1,6 +1,7 @@
 import { Component } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { describe, it, expect, vi, afterEach, beforeEach } from 'vitest';
+import { withdrawClipboard } from '@shared/testing/clipboard-availability';
 import { accessibleName } from '@shared/testing/accessible-name';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { settle, settleBounded } from '@shared/testing/settle';
@@ -194,7 +195,7 @@ describe('CodeCopy', () => {
 
   it('Given a page without clipboard access When « Copier » is clicked Then the status asks to select the code', async () => {
     const { fixture, buttons, status } = await renderHost();
-    vi.spyOn(navigator, 'clipboard', 'get').mockReturnValue(undefined as unknown as Clipboard);
+    withdrawClipboard();
 
     buttons()[0]?.click();
     await settleBounded(fixture);
