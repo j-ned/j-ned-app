@@ -25,7 +25,11 @@ WORKDIR /repo/apps/web
 # ==============================================================================
 FROM source AS build
 
+# Release du site, gravée dans le bundle navigateur (`release` Sentry). Sérialisée en JSON par Node :
+# la valeur entre dans `define` comme une chaîne, jamais comme du code.
+ARG APP_RELEASE=
 RUN pnpm run build --configuration production \
+      --define "APP_RELEASE=$(node -p 'JSON.stringify(process.env.APP_RELEASE ?? "")')" \
  && test -f dist/angular-portfolio-app/browser/index.csr.html \
  && test -f dist/angular-portfolio-app/server/server.mjs \
  && test -f dist/angular-portfolio-app/server/csp-manifest.json
@@ -395,8 +399,8 @@ wait "$nginx_pid" "$node_pid"
 exit 1
 START
 
-# Release du déploiement (`sha-<commit>`, passée par la CI) : tag Sentry des erreurs du rendu. En fin
-# d'étape : changer de commit ne refait que cette couche. `NODE_ENV` : environnement Sentry, comme l'API.
+# Release du déploiement (`sha-<commit>`, passée par la CI) : tag Sentry des erreurs du rendu, la même
+# que celle du bundle navigateur. `NODE_ENV` : environnement Sentry, comme l'API.
 ARG APP_RELEASE=
 ENV SENTRY_RELEASE=${APP_RELEASE} \
     NODE_ENV=production

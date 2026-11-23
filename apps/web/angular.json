@@ -34,6 +34,9 @@
             ],
             "styles": ["src/styles.css"],
             "externalDependencies": ["jsdom", "@sentry/node"],
+            "define": {
+              "APP_RELEASE": "''"
+            },
             "security": {
               "allowedHosts": ["nedellec-julien.fr"]
             }
