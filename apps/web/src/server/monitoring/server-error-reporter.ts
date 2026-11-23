@@ -49,8 +49,12 @@ export function createServerErrorReporter(
       queues: false,
       stackFrameVariables: false,
     },
-    // Le SDK ne fait qu'avertir par défaut : `strict` garde l'arrêt de Node, que le conteneur relance.
-    integrations: [Sentry.onUnhandledRejectionIntegration({ mode: 'strict' })],
+    // Sans fil d'Ariane console : la ligne du journal porterait l'erreur brute (URL demandée complète).
+    // Rejet non géré : le SDK ne fait qu'avertir par défaut, `strict` garde l'arrêt de Node.
+    integrations: (defaults) => [
+      ...defaults.filter(({ name }) => name !== 'Console'),
+      Sentry.onUnhandledRejectionIntegration({ mode: 'strict' }),
+    ],
     beforeSend: scrubEvent,
   });
 

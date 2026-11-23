@@ -125,4 +125,22 @@ describe('createServerErrorReporter', () => {
     expect(event).toHaveProperty('request', { method: 'GET', url: '/blog/article' });
     expect(event).not.toHaveProperty('user.ip_address');
   });
+
+  it('given an error carrying the raw request URL, when reported, then its container log line does not travel as a breadcrumb', async () => {
+    const transport = recordingTransport();
+    const reporter = createServerErrorReporter(PRODUCTION_ENV, { transport: transport.factory });
+    const invalidUrl = Object.assign(new TypeError('Invalid URL'), {
+      input: '//[?token=secret&email=a@b.c',
+    });
+
+    reporter.report(invalidUrl, { message: 'SSR render failed:' });
+    await reporter.flush();
+
+    const [event] = transport.sentEvents();
+    expect(event).not.toEqual(
+      expect.objectContaining({
+        breadcrumbs: expect.arrayContaining([expect.objectContaining({ category: 'console' })]),
+      }),
+    );
+  });
 });
