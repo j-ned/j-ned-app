@@ -77,6 +77,8 @@ import { SITE_IDENTITY } from '@shared/identity/site-identity.static-data';
         Un commentaire publié est conservé, avec ton adresse e-mail, tant que le commentaire reste
         en ligne. Un commentaire en attente l'est jusqu'à la décision de l'éditeur&nbsp;: un refus
         le supprime aussitôt, avec ses réponses. Tout commentaire disparaît avec son article.
+        L'empreinte de ton adresse IP ne sert qu'à limiter les envois en attente&nbsp;: elle est
+        effacée dès la publication du commentaire.
       </p>
       <p data-testid="privacy-comments-rights">
         Pour demander la suppression ou la rectification d'un commentaire, écris à

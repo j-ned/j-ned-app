@@ -1104,6 +1104,30 @@ export function describeCommentRoutes(
         });
       });
 
+      it('Given a pending comment and another one from the same sender, When the owner publishes the first, Then its sender fingerprint is erased and the other keeps it', async () => {
+        const fingerprint = 'a'.repeat(64);
+        const article = await harness.seedPost({ slug: 'usinage' });
+        const published = await harness.seedComment({
+          postId: article.id,
+          status: 'pending',
+          senderHash: fingerprint,
+        });
+        const waiting = await harness.seedComment({
+          postId: article.id,
+          status: 'pending',
+          senderHash: fingerprint,
+        });
+
+        await moderate(published.id, { status: 'published' });
+        const rows = await harness.comments();
+
+        expect(
+          [published.id, waiting.id].map(
+            (id) => rows.find((row) => row.id === id)?.senderHash,
+          ),
+        ).toEqual([null, fingerprint]);
+      });
+
       it('Given a published comment, When the owner publishes it again, Then 409 and nothing changes', async () => {
         const article = await harness.seedPost({ slug: 'usinage' });
         const comment = await harness.seedComment({ postId: article.id });

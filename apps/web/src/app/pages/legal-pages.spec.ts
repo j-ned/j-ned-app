@@ -44,7 +44,14 @@ describe('Pages légales', () => {
       { testId: 'privacy-comments-recipients', mentions: ['Resend'] },
       {
         testId: 'privacy-comments-retention',
-        mentions: ['tant que', 'refus', 'supprim', 'article'],
+        mentions: [
+          'tant que',
+          'refus',
+          'supprim',
+          'article',
+          'empreinte',
+          'effacée dès la publication du commentaire',
+        ],
       },
       { testId: 'privacy-comments-rights', mentions: ['suppression', SITE_IDENTITY.email] },
     ])(

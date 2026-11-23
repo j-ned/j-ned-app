@@ -225,9 +225,10 @@ export class DrizzleCommentStore implements CommentStore {
 
   async publish(id: string, at: Date): Promise<boolean> {
     // Le statut de départ est dans le WHERE : deux publications simultanées ne s'écrasent pas.
+    // L'empreinte ne sert qu'au plafond des envois en attente : effacée dès la publication.
     const rows = await this.db
       .update(blogComments)
-      .set({ status: 'published', moderatedAt: at })
+      .set({ status: 'published', moderatedAt: at, senderHash: null })
       .where(and(eq(blogComments.id, id), eq(blogComments.status, 'pending')))
       .returning({ id: blogComments.id });
     return rows.length > 0;

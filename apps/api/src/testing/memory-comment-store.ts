@@ -154,6 +154,7 @@ export class MemoryCommentStore implements CommentStore {
       ...current,
       status: 'published',
       moderatedAt: at,
+      senderHash: null,
     };
     return Promise.resolve(true);
   }
