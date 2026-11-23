@@ -41,16 +41,18 @@ function makeCtx(canvas: HTMLCanvasElement): Ctx2D {
 }
 
 beforeAll(() => {
-  // Stub ResizeObserver: not implemented in jsdom
-  (globalThis as unknown as Record<string, unknown>)['ResizeObserver'] = class {
+  // happy-dom ne calcule aucune mise en page : un observateur réel ne rapporterait aucune taille.
+  globalThis.ResizeObserver = class implements ResizeObserver {
     observe = noop;
     unobserve = noop;
     disconnect = noop;
   };
 
-  HTMLCanvasElement.prototype.getContext = function (this: HTMLCanvasElement): Ctx2D {
+  vi.spyOn(HTMLCanvasElement.prototype, 'getContext').mockImplementation(function (
+    this: HTMLCanvasElement,
+  ): Ctx2D {
     return makeCtx(this);
-  } as unknown as HTMLCanvasElement['getContext'];
+  });
 });
 
 describe('AppChart', () => {
