@@ -8,7 +8,7 @@ import {
   type AppEnv,
   visitorCountry,
 } from '../common/http';
-import { TRACK_THROTTLE, throttle } from '../common/throttle';
+import { TRACK_THROTTLE, throttle, throttleSession } from '../common/throttle';
 import type { AnalyticsStatsService } from './analytics-stats.service';
 import type { AnalyticsTrackerService } from './analytics-tracker.service';
 import {
@@ -18,7 +18,8 @@ import {
 } from './dto/date-range-query.dto';
 import { trackEventSchema } from './dto/track-event.dto';
 
-// Exemptées du quota global : seule la collecte publique a son propre quota.
+// Collecte publique comptée par IP ; statistiques de l'admin comptées par compte, chaque agrégation
+// étant une requête coûteuse.
 export function analyticsRoutes(
   tracker: AnalyticsTrackerService,
   stats: AnalyticsStatsService,
@@ -38,49 +39,49 @@ export function analyticsRoutes(
         return c.body(null, 204);
       })
 
-      .get('/stats/overview', requireAuth, async (c) =>
+      .get('/stats/overview', throttleSession(requireAuth), async (c) =>
         reply(c, await stats.overview(queryParams(c, dateRangeQuerySchema))),
       )
 
-      .get('/stats/chart', requireAuth, async (c) =>
+      .get('/stats/chart', throttleSession(requireAuth), async (c) =>
         reply(c, await stats.chart(queryParams(c, dateRangeQuerySchema))),
       )
 
       // Top N par url | referrer | browser | country | os.
-      .get('/stats/metrics', requireAuth, async (c) =>
+      .get('/stats/metrics', throttleSession(requireAuth), async (c) =>
         reply(c, await stats.metrics(queryParams(c, metricsQuerySchema))),
       )
 
       // Visites actives sur les 5 dernières minutes.
-      .get('/stats/active', requireAuth, async (c) =>
+      .get('/stats/active', throttleSession(requireAuth), async (c) =>
         reply(c, await stats.active()),
       )
 
-      .get('/stats/projects', requireAuth, async (c) =>
+      .get('/stats/projects', throttleSession(requireAuth), async (c) =>
         reply(c, await stats.projects(queryParams(c, dateRangeQuerySchema))),
       )
 
-      .get('/stats/articles', requireAuth, async (c) =>
+      .get('/stats/articles', throttleSession(requireAuth), async (c) =>
         reply(c, await stats.articles(queryParams(c, dateRangeQuerySchema))),
       )
 
-      .get('/stats/articles-read', requireAuth, async (c) =>
+      .get('/stats/articles-read', throttleSession(requireAuth), async (c) =>
         reply(
           c,
           await stats.articlesRead(queryParams(c, dateRangeQuerySchema)),
         ),
       )
 
-      .get('/stats/cta', requireAuth, async (c) =>
+      .get('/stats/cta', throttleSession(requireAuth), async (c) =>
         reply(c, await stats.cta(queryParams(c, dateRangeQuerySchema))),
       )
 
       // Comptes par entityId : placement (contact_submit) ou canal (outbound_click).
-      .get('/stats/events', requireAuth, async (c) =>
+      .get('/stats/events', throttleSession(requireAuth), async (c) =>
         reply(c, await stats.events(queryParams(c, eventsQuerySchema))),
       )
 
-      .get('/stats/cv-downloads', requireAuth, async (c) =>
+      .get('/stats/cv-downloads', throttleSession(requireAuth), async (c) =>
         reply(c, await stats.cvDownloads(queryParams(c, dateRangeQuerySchema))),
       )
   );
