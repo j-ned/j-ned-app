@@ -1,4 +1,6 @@
 // @vitest-environment node
+/// <reference types="node" />
+import { createServer, get, type Server } from 'node:http';
 import { setUser, type NodeOptions } from '@sentry/node';
 import { afterEach, beforeEach, describe, expect, it, vi, type Mock } from 'vitest';
 import { createServerErrorReporter, type ServerMonitoringEnv } from './server-error-reporter';
@@ -17,6 +19,7 @@ const PRODUCTION_ENV: ServerMonitoringEnv = {
 type RecordingTransport = {
   readonly factory: Mock<NonNullable<NodeOptions['transport']>>;
   readonly sentEvents: () => unknown[];
+  readonly sentItemTypes: () => string[];
 };
 
 // Transport doublé : les enveloppes restent en mémoire, rien ne part sur le réseau.
@@ -33,17 +36,56 @@ function recordingTransport(): RecordingTransport {
     envelopes.flatMap(([, items]) =>
       items.filter(([header]) => header.type === 'event').map(([, payload]) => payload),
     );
-  return { factory, sentEvents };
+  const sentItemTypes = (): string[] =>
+    envelopes.flatMap(([, items]) => items.map(([header]) => header.type));
+  return { factory, sentEvents, sentItemTypes };
+}
+
+type ProcessHook = 'unhandledRejection' | 'uncaughtException';
+const PROCESS_HOOKS: readonly ProcessHook[] = ['unhandledRejection', 'uncaughtException'];
+
+// `Sentry.init` pose ses écouteurs sur `process` : ceux de chaque test sont retirés après lui.
+function addedListeners<E extends ProcessHook>(
+  hook: E,
+  before: readonly unknown[],
+): ReturnType<typeof process.listeners<E>> {
+  return process.listeners(hook).filter((listener) => !before.includes(listener));
+}
+
+function removeAddedListeners<E extends ProcessHook>(hook: E, before: readonly unknown[]): void {
+  for (const listener of addedListeners(hook, before)) process.removeListener(hook, listener);
+}
+
+async function serveOnce(): Promise<void> {
+  const server: Server = createServer((_req, res) => res.end('ok'));
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  if (typeof address !== 'object' || address === null) throw new Error('server not listening');
+  const { port } = address;
+  await new Promise<void>((resolve) =>
+    get(`http://127.0.0.1:${port}/healthz`, (res) => res.resume().on('end', resolve)),
+  );
+  await new Promise<void>((resolve) => server.close(() => resolve()));
 }
 
 describe('createServerErrorReporter', () => {
   let consoleError: ReturnType<typeof vi.spyOn>;
+  let listenersBefore: Readonly<Record<ProcessHook, readonly unknown[]>>;
 
   beforeEach(() => {
     consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    // Isolé de l'environnement ambiant : la CI pose `GITHUB_SHA`, le SDK en ferait une release.
+    vi.stubEnv('SENTRY_RELEASE', undefined);
+    vi.stubEnv('GITHUB_SHA', undefined);
+    listenersBefore = {
+      unhandledRejection: process.listeners('unhandledRejection'),
+      uncaughtException: process.listeners('uncaughtException'),
+    };
   });
 
   afterEach(() => {
+    for (const hook of PROCESS_HOOKS) removeAddedListeners(hook, listenersBefore[hook]);
+    vi.unstubAllEnvs();
     consoleError.mockRestore();
   });
 
@@ -96,6 +138,7 @@ describe('createServerErrorReporter', () => {
   });
 
   it('given a DSN and no release, when a render error is reported, then the event carries no release', async () => {
+    vi.stubEnv('GITHUB_SHA', 'deadbeefcafe');
     const transport = recordingTransport();
     const reporter = createServerErrorReporter(
       { ...PRODUCTION_ENV, SENTRY_RELEASE: '' },
@@ -142,5 +185,51 @@ describe('createServerErrorReporter', () => {
         breadcrumbs: expect.arrayContaining([expect.objectContaining({ category: 'console' })]),
       }),
     );
+  });
+
+  it('given a DSN and an undefined release, when a render error is reported, then no release is detected from the CI commit', async () => {
+    vi.stubEnv('GITHUB_SHA', 'deadbeefcafe');
+    const transport = recordingTransport();
+    const reporter = createServerErrorReporter(
+      { ...PRODUCTION_ENV, SENTRY_RELEASE: undefined },
+      { transport: transport.factory },
+    );
+
+    reporter.report(new Error('render failed'), { message: 'SSR render failed:' });
+    await reporter.flush();
+
+    const [event] = transport.sentEvents();
+    expect(event).not.toHaveProperty('release');
+  });
+
+  it('given a DSN, when a request is served (health probe included), then no request session is sent', async () => {
+    const transport = recordingTransport();
+    const reporter = createServerErrorReporter(PRODUCTION_ENV, { transport: transport.factory });
+
+    await serveOnce();
+    await reporter.flush();
+
+    expect(transport.sentItemTypes()).not.toContain('sessions');
+  });
+
+  it('given a DSN, when a promise rejection is left unhandled, then it is sent as fatal and Node exits with 1', async () => {
+    const transport = recordingTransport();
+    const exit = vi
+      .spyOn(process, 'exit')
+      .mockImplementation((() => undefined) as typeof process.exit);
+    const reporter = createServerErrorReporter(PRODUCTION_ENV, { transport: transport.factory });
+    const [onRejection] = addedListeners('unhandledRejection', listenersBefore.unhandledRejection);
+
+    onRejection?.(new Error('forgotten await'), Promise.resolve());
+    await vi.waitFor(() => expect(exit).toHaveBeenCalledWith(1));
+    await reporter.flush();
+    exit.mockRestore();
+
+    expect(transport.sentEvents()).toEqual([
+      expect.objectContaining({
+        level: 'fatal',
+        exception: { values: [expect.objectContaining({ value: 'forgotten await' })] },
+      }),
+    ]);
   });
 });

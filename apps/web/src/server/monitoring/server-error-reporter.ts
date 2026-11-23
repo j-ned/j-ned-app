@@ -1,17 +1,13 @@
 import * as Sentry from '@sentry/node';
 import { scrubEvent } from '@core/monitoring/scrub-event';
+import type { ReportServerError, ServerErrorReport } from '@core/ssr/server-error-report';
 
 export type ServerMonitoringEnv = Readonly<
   Record<'SENTRY_SSR_DSN' | 'SENTRY_RELEASE' | 'NODE_ENV', string | undefined>
 >;
 
-export type ServerErrorReport = {
-  readonly message: string;
-  readonly request?: { readonly method: string | undefined; readonly url: string | undefined };
-};
-
 export type ServerErrorReporter = {
-  readonly report: (error: unknown, report: ServerErrorReport) => void;
+  readonly report: ReportServerError;
   readonly flush: () => Promise<void>;
 };
 
@@ -34,7 +30,9 @@ export function createServerErrorReporter(
   Sentry.init({
     dsn,
     environment: env.NODE_ENV ?? 'development',
-    ...(env.SENTRY_RELEASE && { release: env.SENTRY_RELEASE }),
+    // Toujours explicite : `undefined` ferait chercher au SDK une release dans l'environnement
+    // (`GITHUB_SHA`…) ; vide, aucun événement n'en porte.
+    release: env.SENTRY_RELEASE ?? '',
     ...(transport && { transport }),
     // Sentry v11 collecte tout par défaut : chaque catégorie est fermée explicitement, comme l'API.
     dataCollection: {
@@ -54,6 +52,8 @@ export function createServerErrorReporter(
     integrations: (defaults) => [
       ...defaults.filter(({ name }) => name !== 'Console'),
       Sentry.onUnhandledRejectionIntegration({ mode: 'strict' }),
+      // Pas de session par requête : la sonde `/healthz` en ferait une toutes les 30 s.
+      Sentry.httpIntegration({ sessions: false }),
     ],
     beforeSend: scrubEvent,
   });
