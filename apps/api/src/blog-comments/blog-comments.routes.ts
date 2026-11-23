@@ -16,6 +16,7 @@ import {
   ADMIN_WRITE_THROTTLE,
   PUBLIC_READ_THROTTLE,
   throttle,
+  throttleSession,
 } from '../common/throttle';
 import { COMMENT_STATUSES } from '../database/schema';
 import type { BlogCommentsService } from './blog-comments.service';
@@ -84,7 +85,7 @@ export function blogCommentsRoutes(
       })
 
       // Les chemins fixes (`/pending-count`) passent avant `/:id`.
-      .get('/comments', throttle(), requireAuth, async (c) => {
+      .get('/comments', throttleSession(requireAuth), async (c) => {
         const { status, ...pagination } = queryParams(c, adminListSchema);
         return reply(
           c,
@@ -92,7 +93,7 @@ export function blogCommentsRoutes(
         );
       })
 
-      .get('/comments/pending-count', throttle(), requireAuth, async (c) =>
+      .get('/comments/pending-count', throttleSession(requireAuth), async (c) =>
         reply(c, await comments.pendingCount()),
       )
 

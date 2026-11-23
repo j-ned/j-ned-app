@@ -9,7 +9,11 @@ import {
   type AppEnv,
 } from '../common/http';
 import { ifMatchVersion, replyVersioned } from '../common/entity-version';
-import { PUBLIC_READ_THROTTLE, throttle } from '../common/throttle';
+import {
+  PUBLIC_READ_THROTTLE,
+  throttle,
+  throttleSession,
+} from '../common/throttle';
 import { blogCommentsRoutes } from '../blog-comments/blog-comments.routes';
 import type { BlogCommentsService } from '../blog-comments/blog-comments.service';
 import { blogContentImagesRoutes } from './blog-content-images.routes';
@@ -50,7 +54,7 @@ function blogPostsRoutes(blog: BlogService, requireAuth: RequireAuth) {
       })
 
       // Tous les articles, brouillons compris (admin).
-      .get('/admin', throttle(), requireAuth, async (c) =>
+      .get('/admin', throttleSession(requireAuth), async (c) =>
         reply(c, await blog.findAllForAdmin()),
       )
 

@@ -9,7 +9,11 @@ import {
   type AppEnv,
 } from '../common/http';
 import { paginationSchema, parsePagination } from '../common/pagination';
-import { CONTACT_THROTTLE, throttle } from '../common/throttle';
+import {
+  CONTACT_THROTTLE,
+  throttle,
+  throttleSession,
+} from '../common/throttle';
 import type { ContactService } from './contact.service';
 import { createContactMessageSchema } from './dto/create-contact-message.dto';
 
@@ -30,12 +34,12 @@ export function contactRoutes(
       })
 
       // Paginé, du plus récent au plus ancien.
-      .get('/messages', throttle(), requireAuth, async (c) => {
+      .get('/messages', throttleSession(requireAuth), async (c) => {
         const query = queryParams(c, paginationSchema);
         return reply(c, await contact.findAll(parsePagination(query)));
       })
 
-      .get('/messages/unread-count', throttle(), requireAuth, async (c) =>
+      .get('/messages/unread-count', throttleSession(requireAuth), async (c) =>
         reply(c, await contact.unreadCount()),
       )
 

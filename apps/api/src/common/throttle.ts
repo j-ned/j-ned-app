@@ -1,7 +1,7 @@
-import type { MiddlewareHandler } from 'hono';
+import type { Context, MiddlewareHandler } from 'hono';
 import { isIP } from 'node:net';
-import { clientIp } from './http';
-import { TooManyRequestsException } from './http-errors';
+import { clientIp, type AppEnv } from './http';
+import { TooManyRequestsException, UnauthorizedException } from './http-errors';
 import { Logger } from './logger';
 
 export type ThrottleConfig = {
@@ -52,6 +52,14 @@ export const ADMIN_WRITE_THROTTLE: ThrottleConfig = {
   whenFull: 'allow',
 };
 
+// Lectures de l'admin, par compte et par route : 30 retours par minute (relecture espacée de 2 s par le
+// front) laissent 30 lectures aux actions et aux navigations sur la même route.
+export const ADMIN_READ_THROTTLE: ThrottleConfig = {
+  limit: 60,
+  ttlMs: 60_000,
+  whenFull: 'allow',
+};
+
 // Un vrai visiteur envoie un message ; trois par heure laissent la place à une correction.
 export const CONTACT_THROTTLE: ThrottleConfig = { limit: 3, ttlMs: 3_600_000 };
 
@@ -73,6 +81,8 @@ export type ThrottleHit = {
 // En mémoire : l'API tourne en un seul process.
 export interface ThrottleStore {
   hit(key: string, ttlMs: number, now: number): Promise<ThrottleHit>;
+  // Fenêtre en cours sans la compter ; `undefined` si la clé n'en a pas.
+  peek(key: string, now: number): Promise<ThrottleHit | undefined>;
   reset(key: string): Promise<void>;
 }
 
@@ -113,6 +123,15 @@ export class MemoryThrottleStore implements ThrottleStore {
     const opened = { count: 1, resetAt: now + ttlMs };
     windows.set(key, opened);
     return Promise.resolve({ ...opened });
+  }
+
+  peek(key: string, now: number): Promise<ThrottleHit | undefined> {
+    const current = this.scopeOf(key).get(key);
+    return Promise.resolve(
+      current && current.resetAt > now
+        ? { count: current.count, resetAt: current.resetAt }
+        : undefined,
+    );
   }
 
   reset(key: string): Promise<void> {
@@ -218,8 +237,7 @@ export function throttle(
   config: ThrottleConfig = DEFAULT_THROTTLE,
   now: () => number = Date.now,
 ): MiddlewareHandler {
-  routeCount += 1;
-  const route = `route${routeCount}`;
+  const route = nextRoute();
   return async (c, next) => {
     const at = now();
     const hit = await countHit(
@@ -227,14 +245,95 @@ export function throttle(
       config.ttlMs,
       at,
     );
-    if (hit?.saturated && config.whenFull === 'allow') return next();
-    if (hit && hit.count > config.limit) {
-      c.header(
-        'Retry-After',
-        String(Math.max(1, Math.ceil((hit.resetAt - at) / 1000))),
-      );
-      throw new TooManyRequestsException();
-    }
+    rejectOverLimit(c, hit, config, at);
     await next();
   };
+}
+
+export type SessionThrottleConfig = {
+  readonly anonymous: ThrottleConfig;
+  readonly account: ThrottleConfig;
+};
+
+// Route sous session : un compte connecté est compté par son identifiant, d'où qu'il vienne ; un refus
+// 401 est compté par IP, et l'IP qui a épuisé ses refus reçoit 429 avant toute vérification de session.
+// Un anonyme ne touche donc ni au quota d'un compte ni à la base au-delà de son quota.
+export function throttleSession(
+  requireAuth: MiddlewareHandler<AppEnv>,
+  config: SessionThrottleConfig = {
+    anonymous: DEFAULT_THROTTLE,
+    account: ADMIN_READ_THROTTLE,
+  },
+  now: () => number = Date.now,
+): MiddlewareHandler<AppEnv> {
+  const route = nextRoute();
+  const { anonymous, account } = config;
+  return async (c, next) => {
+    const at = now();
+    const addressKey = `${route}|${quotaAddress(clientIp(c))}`;
+    const refusals = await peekHits(addressKey, at);
+    if (refusals && refusals.count >= anonymous.limit) {
+      throw tooManyRequests(c, refusals, at);
+    }
+    try {
+      await requireAuth(c, async () => {
+        const hit = await countHit(
+          `${route}:account|${c.var.user.id}`,
+          account.ttlMs,
+          at,
+        );
+        rejectOverLimit(c, hit, account, at);
+        await next();
+      });
+    } catch (error: unknown) {
+      if (error instanceof UnauthorizedException) {
+        await countHit(addressKey, anonymous.ttlMs, at);
+      }
+      throw error;
+    }
+  };
+}
+
+function nextRoute(): string {
+  routeCount += 1;
+  return `route${routeCount}`;
+}
+
+// Même tolérance que `countHit` : une panne du stockage laisse passer.
+async function peekHits(
+  key: string,
+  at: number,
+): Promise<ThrottleHit | undefined> {
+  try {
+    return await store.peek(key, at);
+  } catch (error: unknown) {
+    logger.warn(
+      { err: error as Error },
+      'Throttle store unavailable: request let through',
+    );
+    return undefined;
+  }
+}
+
+function rejectOverLimit(
+  c: Context,
+  hit: ThrottleHit | undefined,
+  config: ThrottleConfig,
+  at: number,
+): void {
+  if (!hit) return;
+  if (hit.saturated && config.whenFull === 'allow') return;
+  if (hit.count > config.limit) throw tooManyRequests(c, hit, at);
+}
+
+function tooManyRequests(
+  c: Context,
+  hit: ThrottleHit,
+  at: number,
+): TooManyRequestsException {
+  c.header(
+    'Retry-After',
+    String(Math.max(1, Math.ceil((hit.resetAt - at) / 1000))),
+  );
+  return new TooManyRequestsException();
 }

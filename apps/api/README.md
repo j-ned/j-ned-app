@@ -156,6 +156,7 @@ pnpm db:seed     # crée l'admin avec ADMIN_EMAIL + ADMIN_INITIAL_PASSWORD (idem
 - Connexion et vérification 2FA : 5 tentatives par minute et par IP (`AUTH_ATTEMPT_THROTTLE`).
 - **Visiteur d'un quota** : la dernière entrée de `X-Forwarded-For` (écrite par le proxy de confiance) si c'est une adresse IP, sinon l'adresse de la socket (`clientIp`, `src/common/http.ts`). Le compteur d'une adresse IPv6 est celui de son préfixe /64 (`quotaAddress`, `src/common/throttle.ts`) : un abonné ne multiplie pas ses quotas en changeant d'adresse dans son préfixe. Une IPv4 mappée (`::ffff:a.b.c.d`) compte comme l'IPv4.
 - **Mot de passe redemandé sous session** (`change-password`, `2fa/disable`) : 5 essais par quart d'heure et par compte (`REAUTH_ACCOUNT_THROTTLE`), compteur commun aux deux routes, remis à zéro par un succès ; au-delà, 429 avec `Retry-After`. Une session volée ne sert pas à deviner le mot de passe.
+- **Lectures de l'admin** (`GET` sous session : `/auth/me`, `/auth/login-events`, `/blog/posts/admin`, `/contact/messages`, `/contact/messages/unread-count`, `/blog/comments`, `/blog/comments/pending-count`) : `throttleSession` (`src/common/throttle.ts`) compte une session valide **par compte et par route**, d'où qu'elle vienne : 60 par minute (`ADMIN_READ_THROTTLE`, 120 pour `/auth/me`). Une requête refusée en 401 est comptée par IP (10 par minute, 120 pour `/auth/me`) ; une IP qui a épuisé ses refus reçoit 429 avant toute vérification de session, donc sans lecture en base. Un anonyme ne consomme jamais le quota d'un compte ; un admin connecté derrière la même IP qu'un anonyme épuisé reçoit lui aussi 429 jusqu'à la fin de la fenêtre. Les écritures de l'admin gardent leur quota par IP devant `requireAuth`.
 - **Compteurs bornés** (`MemoryThrottleStore`) : 5 000 clés au plus par route ou par usage (`DEFAULT_MAX_KEYS_PER_SCOPE`), fenêtres expirées purgées d'abord, jamais d'éviction d'un compteur vivant. Portée pleine : un nouveau visiteur reçoit 429 sur la connexion, la 2FA et le contact (`whenFull: 'reject'`, défaut), et il est servi sans être compté sur les lectures publiques, la mesure d'audience et les routes au quota par défaut (`whenFull: 'allow'`).
 - JWT signés et vérifiés par `jsonwebtoken` (`src/auth/jwt.service.ts`).
 - **Journal des connexions** (`login_event`, `src/auth/login-journal.service.ts`) : une ligne par étape de connexion, acceptée ou refusée (`password_accepted`/`password_rejected`, `two_factor_accepted`/`two_factor_rejected`), avec le compte s'il est connu, le pays, le navigateur et le système. Ni adresse IP ni e-mail saisi. Une écriture qui échoue est journalisée en erreur et ne bloque pas la connexion. Conservé 90 jours, purgé par la tâche quotidienne.
@@ -167,6 +168,14 @@ pnpm db:seed     # crée l'admin avec ADMIN_EMAIL + ADMIN_INITIAL_PASSWORD (idem
   const dto = await jsonBody(c, CreateSomethingDto);
   return reply(c, await service.create(c.var.user, dto), 201);
 })
+```
+
+Une lecture de l'admin passe la session à `throttleSession`, qui l'exécute entre ses deux compteurs :
+
+```typescript
+.get('/something', throttleSession(requireAuth), async (c) =>
+  reply(c, await service.findAll(c.var.user)),
+)
 ```
 
 ## Validation HTTP

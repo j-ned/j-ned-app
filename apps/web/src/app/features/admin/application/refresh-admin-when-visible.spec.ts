@@ -19,22 +19,22 @@ describe('refreshAdminWhenVisible', () => {
     forgetTabVisibility();
   });
 
-  it('Given an admin screen just reread When the tab comes back within 15 s Then nothing is reread; at 15 s, it is', () => {
+  it('Given an admin screen just reread When the tab comes back within 2 s Then nothing is reread; at 2 s, it is', () => {
     const refresh = vi.fn();
     const injector = createEnvironmentInjector([], TestBed.inject(EnvironmentInjector));
     injector.runInContext(() => refreshAdminWhenVisible(refresh));
     showTab('visible');
 
-    vi.setSystemTime(START + 14_999);
+    vi.setSystemTime(START + 1_999);
     showTab('visible');
     const within = refresh.mock.calls.length;
-    vi.setSystemTime(START + 15_000);
+    vi.setSystemTime(START + 2_000);
     showTab('visible');
 
     expect({
       interval: ADMIN_REFRESH_MIN_INTERVAL_MS,
       calls: [within, refresh.mock.calls.length],
-    }).toEqual({ interval: 15_000, calls: [1, 2] });
+    }).toEqual({ interval: 2_000, calls: [1, 2] });
     injector.destroy();
   });
 });

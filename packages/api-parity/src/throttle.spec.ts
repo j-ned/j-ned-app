@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { expectApiError } from './api-error';
 import { newVisitor, send, type Visitor } from './client';
+import { adminSession } from './session';
 
 const WRONG_LOGIN = {
   email: 'nobody@parity.test',
@@ -86,5 +87,26 @@ describe('rate limiting per visitor', () => {
     expect(new Set(await statuses(30, () => visitor.request('GET', '/api/projects')))).toEqual(
       new Set([200]),
     );
+  });
+
+  it('Given a signed-in admin, When it reads the unread count 15 times within a minute from one address, Then it is never throttled (60 per account)', async () => {
+    const session = await adminSession();
+    const visitor = newVisitor();
+
+    expect(
+      new Set(
+        await statuses(15, () =>
+          visitor.request('GET', '/api/contact/messages/unread-count', { session }),
+        ),
+      ),
+    ).toEqual(new Set([200]));
+  });
+
+  it('Given no session, When a visitor reads the unread count an 11th time within a minute, Then it gets 429', async () => {
+    const visitor = newVisitor();
+    const read = () => visitor.request('GET', '/api/contact/messages/unread-count');
+
+    expect(await statuses(10, read)).toEqual(Array(10).fill(401));
+    expectApiError(await read(), 429, '/api/contact/messages/unread-count');
   });
 });
