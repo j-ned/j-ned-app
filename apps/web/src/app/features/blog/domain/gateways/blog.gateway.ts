@@ -6,8 +6,10 @@ export abstract class BlogGateway {
   abstract getPublishedPosts(options?: {
     readonly background?: boolean;
   }): Observable<readonly BlogPostSummary[]>;
-  abstract getAllPostsForAdmin(): Observable<readonly BlogPost[]>;
+  abstract getAllPostsForAdmin(): Observable<readonly BlogPostSummary[]>;
   abstract invalidateAdminPosts(): void;
+  // `null` : article supprimé entre-temps. La relecture de version ne signale aucun échec à l'écran.
+  abstract getAdminPost(id: string): Observable<BlogPost | null>;
   abstract getLatestAdminPost(id: string): Observable<BlogPost | null>;
   abstract getPostBySlug(slug: string): Observable<BlogPost>;
   abstract createPost(post: BlogPostInput): Observable<BlogPost>;

@@ -8,7 +8,7 @@ import {
   formatPercent,
   pagesPerSessionLabel,
 } from '@features/analytics/domain/analytics-presenter';
-import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
+import type { BlogPostSummary } from '@features/blog/domain/models/blog-post.model';
 import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
 import {
   PROJECT_KIND_FILTER_LABELS,
@@ -46,7 +46,7 @@ const SHORT_DATE = new Intl.DateTimeFormat('fr-FR', {
 
 export function toOnlineRows(
   projects: readonly Project[] | null,
-  posts: readonly BlogPost[] | null,
+  posts: readonly BlogPostSummary[] | null,
 ): readonly CartoucheRow[] {
   const byKind = PROJECT_KINDS.map((kind) => ({
     label: PROJECT_KIND_FILTER_LABELS[kind],
@@ -140,9 +140,9 @@ export function chartSummary(points: readonly DailyChartPoint[]): string {
   return `Visites par jour ${period}${NBSP}: ${peaks}.`;
 }
 
-const postDate = (post: BlogPost): string => post.publishedAt ?? post.updatedAt;
+const postDate = (post: BlogPostSummary): string => post.publishedAt ?? post.updatedAt;
 
-function toPostRow(post: BlogPost): ContentRow {
+function toPostRow(post: BlogPostSummary): ContentRow {
   const date = withFirstOfMonth(SHORT_DATE, new Date(postDate(post)));
   return {
     key: `post:${post.id}`,
@@ -169,7 +169,7 @@ function toProjectRow(project: Project): ContentRow {
 
 export function toContentRows(
   projects: readonly Project[] | null,
-  posts: readonly BlogPost[] | null,
+  posts: readonly BlogPostSummary[] | null,
   limit: number,
 ): readonly ContentRow[] {
   const articles = (posts ?? [])

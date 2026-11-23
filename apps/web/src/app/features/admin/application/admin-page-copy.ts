@@ -1,4 +1,4 @@
-import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
+import type { BlogPostSummary } from '@features/blog/domain/models/blog-post.model';
 import type { ContactMessage } from '@features/contact/domain/models/contact-message.model';
 import type { CvInfo } from '@features/cv/domain/models/cv.model';
 import type { Project } from '@features/projects/domain/models/project.model';
@@ -40,7 +40,7 @@ export function projectsOverline(projects: readonly Project[]): string {
   return `${counted(projects.length, 'réalisation', 'réalisations')} · ${counted(featured, 'mise en avant', 'mises en avant')}`;
 }
 
-export function postsOverline(posts: readonly BlogPost[]): string {
+export function postsOverline(posts: readonly BlogPostSummary[]): string {
   const published = posts.filter(isPublished).length;
   return [
     counted(posts.length, 'article', 'articles'),

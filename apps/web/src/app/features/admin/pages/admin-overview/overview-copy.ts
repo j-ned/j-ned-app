@@ -1,5 +1,5 @@
 import type { MetricEntry, StatsOverview } from '@features/analytics/domain/models/analytics.types';
-import type { BlogPost } from '@features/blog/domain/models/blog-post.model';
+import type { BlogPostSummary } from '@features/blog/domain/models/blog-post.model';
 import type { Project } from '@features/projects/domain/models/project.model';
 import { counted } from '@shared/format/counted';
 import { groupedNumber } from '@shared/format/grouped-number';
@@ -12,7 +12,7 @@ export type OverviewSummaryInput = {
   readonly referrers: readonly MetricEntry[] | null;
   readonly unread: number | null;
   readonly projects: readonly Project[] | null;
-  readonly posts: readonly BlogPost[] | null;
+  readonly posts: readonly BlogPostSummary[] | null;
 };
 
 type Noun = { readonly one: string; readonly singular: string; readonly plural: string };

@@ -1,6 +1,15 @@
 import { inject, Injectable } from '@angular/core';
-import { HttpClient } from '@angular/common/http';
-import { map, retry, tap, type MonoTypeOperatorFunction, type Observable } from 'rxjs';
+import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
+import {
+  catchError,
+  map,
+  of,
+  retry,
+  tap,
+  throwError,
+  type MonoTypeOperatorFunction,
+  type Observable,
+} from 'rxjs';
 import { BlogGateway } from '../domain/gateways/blog.gateway';
 import type { BlogPost, BlogPostInput, BlogPostSummary } from '../domain/models/blog-post.model';
 import type { ContentImage } from '../domain/models/content-image.model';
@@ -26,10 +35,14 @@ export class HttpBlogGateway extends BlogGateway {
 
   private readonly adminPosts = refreshable((background) =>
     this.http
-      .get<BlogPost[]>(`${this.apiUrl}/blog/posts/admin`, { context: silentWhen(background) })
+      .get<BlogPostSummary[]>(`${this.apiUrl}/blog/posts/admin`, {
+        context: silentWhen(background),
+      })
       .pipe(
         retry(1),
-        map((rows): readonly BlogPost[] => rows.map((p) => resolvePost(STORAGE_BASE_PATH, p))),
+        map((rows): readonly BlogPostSummary[] =>
+          rows.map((p) => resolvePost(STORAGE_BASE_PATH, p)),
+        ),
       ),
   );
 
@@ -43,7 +56,7 @@ export class HttpBlogGateway extends BlogGateway {
       .pipe(map((rows) => rows.map((p) => resolvePost(STORAGE_BASE_PATH, p))));
   }
 
-  getAllPostsForAdmin(): Observable<readonly BlogPost[]> {
+  getAllPostsForAdmin(): Observable<readonly BlogPostSummary[]> {
     return this.adminPosts.value$;
   }
 
@@ -51,16 +64,13 @@ export class HttpBlogGateway extends BlogGateway {
     this.adminPosts.refresh();
   }
 
+  getAdminPost(id: string): Observable<BlogPost | null> {
+    return this.readAdminPost(id, new HttpContext());
+  }
+
   // Hors du cache partagé : la relire écraserait le brouillon de l'éditeur ouvert.
   getLatestAdminPost(id: string): Observable<BlogPost | null> {
-    return this.http
-      .get<BlogPost[]>(`${this.apiUrl}/blog/posts/admin`, { context: silentErrors() })
-      .pipe(
-        map((rows) => {
-          const post = rows.find((row) => row.id === id);
-          return post ? resolvePost(STORAGE_BASE_PATH, post) : null;
-        }),
-      );
+    return this.readAdminPost(id, silentErrors());
   }
 
   getPostBySlug(slug: string): Observable<BlogPost> {
@@ -128,6 +138,19 @@ export class HttpBlogGateway extends BlogGateway {
         likesCount: number;
       }>(`${this.apiUrl}/blog/posts/${encodeURIComponent(slug)}/like`, {})
       .pipe(this.relistOnSuccess());
+  }
+
+  private readAdminPost(id: string, context: HttpContext): Observable<BlogPost | null> {
+    return this.http
+      .get<BlogPost>(`${this.apiUrl}/blog/posts/admin/${encodeURIComponent(id)}`, { context })
+      .pipe(
+        map((post): BlogPost | null => resolvePost(STORAGE_BASE_PATH, post)),
+        catchError((error: unknown) =>
+          error instanceof HttpErrorResponse && error.status === 404
+            ? of(null)
+            : throwError(() => error),
+        ),
+      );
   }
 
   private relistOnSuccess<T>(): MonoTypeOperatorFunction<T> {
