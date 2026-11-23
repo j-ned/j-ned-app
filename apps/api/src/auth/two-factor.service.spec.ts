@@ -1,15 +1,15 @@
 import { generateSync } from 'otplib';
 import { TwoFactorService } from './two-factor.service';
-import { AppConfigService } from '../config/app-config.service';
+import { createTestConfig } from '../testing/test-config';
 import { defined } from '../testing/defined';
 
 describe('TwoFactorService', () => {
   let service: TwoFactorService;
 
   beforeEach(() => {
-    service = new TwoFactorService({
-      totpAppName: 'Test App',
-    } as unknown as AppConfigService);
+    service = new TwoFactorService(
+      createTestConfig({ TOTP_APP_NAME: 'Test App' }),
+    );
   });
 
   it('generateSecret retourne un secret base32 valide', () => {

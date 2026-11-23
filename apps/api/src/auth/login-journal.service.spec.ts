@@ -1,4 +1,5 @@
 import { loginEvent } from '../database/schema';
+import { asDatabase } from '../testing/mock-database';
 import { createMockDb } from '../testing/test-utils';
 import {
   LoginJournalService,
@@ -18,7 +19,7 @@ describe('LoginJournalService', () => {
 
   beforeEach(() => {
     db = createMockDb();
-    service = new LoginJournalService(db as never);
+    service = new LoginJournalService(asDatabase(db));
   });
 
   describe('record', () => {

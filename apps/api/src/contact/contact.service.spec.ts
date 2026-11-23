@@ -1,16 +1,17 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { NotFoundException } from '../common/http-errors';
 import { ContactService } from './contact.service';
+import { asDatabase } from '../testing/mock-database';
 import { createMockDb } from '../testing/test-utils';
-import { MailerService } from '../mailer/mailer.service';
-import { AppConfigService } from '../config/app-config.service';
+import type { MailSender } from '../mailer/mail-transport';
+import { stubFn, type Stub } from '../testing/stub';
+import { createTestConfig } from '../testing/test-config';
 import { contactMessages, type ContactMessage } from '../database/schema';
 import { defined } from '../testing/defined';
 
 describe('ContactService', () => {
   let service: ContactService;
   let db: ReturnType<typeof createMockDb>;
-  let mailer: jest.Mocked<MailerService>;
+  let mailer: Stub<MailSender>;
 
   const mkMessage = (
     overrides: Partial<ContactMessage> = {},
@@ -29,13 +30,10 @@ describe('ContactService', () => {
 
   beforeEach(() => {
     db = createMockDb();
-    mailer = {
-      sendMail: jest.fn().mockResolvedValue(undefined),
-    } as unknown as jest.Mocked<MailerService>;
+    mailer = { sendMail: stubFn<MailSender['sendMail']>() };
+    mailer.sendMail.mockResolvedValue(undefined);
 
-    service = new ContactService(db as never, mailer, {
-      jwtSecret: 'test-jwt-secret',
-    } as unknown as AppConfigService);
+    service = new ContactService(asDatabase(db), mailer, createTestConfig());
   });
 
   describe('create', () => {
@@ -81,9 +79,13 @@ describe('ContactService', () => {
     it('Given un secret différent, When l’empreinte est calculée, Then elle change (clé, pas un SHA-256 brut)', async () => {
       db.returning.mockResolvedValue([mkMessage()]);
       await service.create(DTO, SENDER);
-      const other = new ContactService(db as never, mailer, {
-        jwtSecret: 'un-autre-secret',
-      } as unknown as AppConfigService);
+      const other = new ContactService(
+        asDatabase(db),
+        mailer,
+        createTestConfig({
+          JWT_SECRET: 'un-autre-secret-de-test-de-32-caracteres',
+        }),
+      );
       await other.create(DTO, SENDER);
       const [a, b] = insertedRows().map((values) => values.senderHash);
       expect(a).not.toBe(b);
