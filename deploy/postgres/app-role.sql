@@ -111,7 +111,8 @@ FROM (VALUES
   ('contact_message', 'SELECT, INSERT, UPDATE, DELETE'),
   ('blog_post',       'SELECT, INSERT, UPDATE, DELETE'),
   ('project',         'SELECT, INSERT, UPDATE, DELETE'),
-  ('project_image',   'SELECT, INSERT, UPDATE, DELETE')
+  ('project_image',   'SELECT, INSERT, UPDATE, DELETE'),
+  ('blog_comment',    'SELECT, INSERT, UPDATE, DELETE')
 ) AS needed(table_name, privileges) \gexec
 
 -- Aucune séquence dans `public` aujourd'hui (clés uuid) ; celles qui existeraient restent utilisables.
@@ -124,6 +125,25 @@ ALTER DEFAULT PRIVILEGES IN SCHEMA public
   GRANT SELECT, INSERT, UPDATE, DELETE ON TABLES TO :"app_role";
 ALTER DEFAULT PRIVILEGES IN SCHEMA public
   GRANT USAGE, SELECT ON SEQUENCES TO :"app_role";
+
+-- 6. Une table de `public` qui reste inaccessible au rôle a été créée avant les privilèges par défaut
+--    et manque à la liste du point 4 : arrêt, rien d'appliqué, plutôt qu'une API qui échoue dessus.
+DO $$
+DECLARE
+  unreachable text;
+BEGIN
+  -- Par oid : le nom qualifié serait résolu avant le filtre sur le schéma, dans un ordre non garanti.
+  SELECT string_agg(quote_ident(relname), ', ' ORDER BY relname) INTO unreachable
+  FROM pg_class
+  WHERE relnamespace = 'public'::regnamespace
+    AND relkind IN ('r', 'p')
+    AND NOT has_table_privilege(current_setting('portfolio.app_role'), oid, 'SELECT');
+  IF unreachable IS NOT NULL THEN
+    RAISE EXCEPTION 'tables de public inaccessibles au rôle applicatif : % ; compléter la liste du point 4',
+      unreachable;
+  END IF;
+END
+$$;
 
 COMMIT;
 

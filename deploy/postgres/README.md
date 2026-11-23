@@ -27,10 +27,13 @@ Relevés dans le code de l'API (`apps/api/src`), table par table :
 | `analytics_event`, `login_event`                                      | SELECT, INSERT, DELETE         | insérés, lus, purgés par la tâche quotidienne ; jamais modifiés                      |
 | `page_view`                                                           | SELECT, INSERT, UPDATE, DELETE | durée de visite mise à jour, purge                                                   |
 | `cv_file`, `contact_message`, `blog_post`, `project`, `project_image` | SELECT, INSERT, UPDATE, DELETE | gérés depuis l'admin (et le formulaire de contact)                                   |
+| `blog_comment`                                                        | SELECT, INSERT, UPDATE, DELETE | envoyés par les visiteurs, publiés (empreinte d'IP effacée) ou refusés (supprimés)   |
 
 `SET LOCAL lock_timeout` ne demande aucun privilège. Il n'y a aucune séquence dans `public` (clés
 `uuid`). Les tables que créeront les **prochaines migrations** reçoivent d'office SELECT, INSERT,
-UPDATE, DELETE (`ALTER DEFAULT PRIVILEGES` du rôle propriétaire) : aucune intervention à prévoir.
+UPDATE, DELETE (`ALTER DEFAULT PRIVILEGES` du rôle propriétaire) : aucune intervention à prévoir. Une
+table déjà en place que la liste oublie arrête le script, sans rien appliquer : il nomme la table à
+ajouter.
 
 Conséquences à connaître :
 
@@ -83,7 +86,7 @@ export POSTGRES_APP_PASSWORD="$(openssl rand -hex 32)"
 docker exec -i -e POSTGRES_APP_PASSWORD <db> sh -c 'psql -U "$POSTGRES_USER" -d "$POSTGRES_DB" -f -' < app-role.sql
 ```
 
-Vérification : le script finit par le tableau des privilèges (11 tables, celles de la section
+Vérification : le script finit par le tableau des privilèges (12 tables, celles de la section
 ci-dessus) sans `ERROR`. Le rôle se connecte par le réseau avec son mot de passe et ne peut pas
 créer (depuis le conteneur de sauvegarde, qui a `psql` et joint la base ; dans le conteneur de la
 base, la connexion locale ne demande aucun mot de passe et ne prouverait rien) :
