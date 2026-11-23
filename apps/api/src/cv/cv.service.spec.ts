@@ -1,14 +1,14 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { NotFoundException } from '../common/http-errors';
 import { CvService } from './cv.service';
+import { asDatabase } from '../testing/mock-database';
 import { createMockDb } from '../testing/test-utils';
-import { StorageService } from '../storage/storage.service';
+import type { StorageService } from '../storage/storage.service';
 import type { CvFile } from '../database/schema';
 
 describe('CvService', () => {
   let service: CvService;
   let db: ReturnType<typeof createMockDb>;
-  let storage: jest.Mocked<StorageService>;
+  let storage: jest.Mocked<Pick<StorageService, 'upload' | 'get' | 'delete'>>;
 
   const mkCvFile = (overrides: Partial<CvFile> = {}): CvFile => ({
     id: '11111111-1111-1111-1111-111111111111',
@@ -27,11 +27,9 @@ describe('CvService', () => {
       upload: jest.fn().mockResolvedValue(undefined),
       get: jest.fn().mockResolvedValue(Buffer.from('pdf-bytes')),
       delete: jest.fn().mockResolvedValue(undefined),
-      list: jest.fn(),
-      getPublicUrl: jest.fn(),
-    } as unknown as jest.Mocked<StorageService>;
+    };
 
-    service = new CvService(db as never, storage);
+    service = new CvService(asDatabase(db), storage);
   });
 
   describe('upsert', () => {
@@ -95,7 +93,7 @@ describe('CvService', () => {
       const callOrder: string[] = [];
       db.where.mockImplementationOnce(() => {
         callOrder.push('db-delete');
-        return Promise.resolve(undefined) as never;
+        return Promise.resolve(undefined);
       });
       storage.delete.mockImplementationOnce(() => {
         callOrder.push('s3-delete');

@@ -1,10 +1,8 @@
 import { ServiceUnavailableException } from '../common/http-errors';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { SQL } from 'drizzle-orm';
-import {
-  createMockDatabase,
-  type MockDatabase,
-} from '../testing/mock-database';
+import { asDatabase } from '../testing/mock-database';
+import { createMockDb } from '../testing/test-utils';
 import { inProfileTransaction } from './profile-lock';
 
 const asSql = (query: unknown) => new PgDialect().sqlToQuery(query as SQL).sql;
@@ -17,12 +15,12 @@ const aLockTimeout = () =>
   });
 
 describe('inProfileTransaction', () => {
-  let db: MockDatabase;
+  let db: ReturnType<typeof createMockDb>;
   let effects: string[];
 
   beforeEach(() => {
     effects = [];
-    db = createMockDatabase();
+    db = createMockDb();
     db.execute.mockImplementation((query: unknown) => {
       effects.push(asSql(query));
       return Promise.resolve();
@@ -30,7 +28,7 @@ describe('inProfileTransaction', () => {
   });
 
   it('Given a unit of work, When run, Then it runs in a transaction whose first statement bounds the lock wait to 5 s', async () => {
-    const result = await inProfileTransaction(db, () => {
+    const result = await inProfileTransaction(asDatabase(db), () => {
       effects.push('work');
       return Promise.resolve(42);
     });
@@ -47,7 +45,7 @@ describe('inProfileTransaction', () => {
     'Given the lock wait times out (%s), When run, Then a clean 503 asks to retry',
     async (_label, err) => {
       await expect(
-        inProfileTransaction(db, () => Promise.reject(err)),
+        inProfileTransaction(asDatabase(db), () => Promise.reject(err)),
       ).rejects.toThrow(ServiceUnavailableException);
     },
   );
@@ -56,7 +54,7 @@ describe('inProfileTransaction', () => {
     const err = Object.assign(new Error('db down'), { code: '08006' });
 
     await expect(
-      inProfileTransaction(db, () => Promise.reject(err)),
+      inProfileTransaction(asDatabase(db), () => Promise.reject(err)),
     ).rejects.toBe(err);
   });
 });

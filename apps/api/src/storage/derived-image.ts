@@ -2,6 +2,9 @@ import { NotFoundException } from '../common/http-errors';
 import { readAll } from './s3-utils';
 import type { StorageService } from './storage.service';
 
+// Seules la lecture et l'écriture d'objets servent à dériver une image.
+export type DerivedImageStorage = Pick<StorageService, 'get' | 'upload'>;
+
 export type DerivedImage<TContentType extends string> = {
   readonly buffer: Buffer;
   readonly contentType: TContentType;
@@ -10,7 +13,7 @@ export type DerivedImage<TContentType extends string> = {
 // Calculée à la première demande puis conservée dans S3 ; `StorageService` la jette quand l'original
 // change. Ni backfill ni colonne en base : les images déjà en ligne en profitent.
 export async function getOrDerive<TContentType extends string>(
-  storage: StorageService,
+  storage: DerivedImageStorage,
   bucket: string,
   key: string,
   derived: { readonly key: string; readonly contentType: TContentType },

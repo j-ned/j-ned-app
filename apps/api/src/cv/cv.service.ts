@@ -14,7 +14,7 @@ export class CvService {
 
   constructor(
     private readonly db: Database,
-    private readonly storage: StorageService,
+    private readonly storage: Pick<StorageService, 'upload' | 'get' | 'delete'>,
   ) {}
 
   async upsert(file: UploadedFile): Promise<CvFile> {
