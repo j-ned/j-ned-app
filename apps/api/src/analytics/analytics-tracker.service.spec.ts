@@ -1,7 +1,7 @@
 import { createHash } from 'node:crypto';
-/* eslint-disable @typescript-eslint/no-unsafe-member-access */
 import { AnalyticsTrackerService } from './analytics-tracker.service';
-import { AppConfigService } from '../config/app-config.service';
+import { asDatabase } from '../testing/mock-database';
+import { createTestConfig } from '../testing/test-config';
 import { createMockDb } from '../testing/test-utils';
 import * as isbotModule from 'isbot';
 import { SQL } from 'drizzle-orm';
@@ -18,7 +18,7 @@ jest.mock('isbot');
 describe('AnalyticsTrackerService', () => {
   let service: AnalyticsTrackerService;
   let db: ReturnType<typeof createMockDb>;
-  const isbotMock = isbotModule.isbot as unknown as jest.Mock;
+  const isbotMock = jest.mocked(isbotModule.isbot);
 
   const NORMAL_UA =
     'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
@@ -28,11 +28,8 @@ describe('AnalyticsTrackerService', () => {
     isbotMock.mockReturnValue(false);
 
     service = new AnalyticsTrackerService(
-      db as never,
-      {
-        corsOrigins: ['https://nedellec-julien.fr'],
-        jwtSecret: 'test-jwt-secret',
-      } as unknown as AppConfigService,
+      asDatabase(db),
+      createTestConfig({ CORS_ORIGINS: 'https://nedellec-julien.fr' }),
     );
 
     // Date fixe pour tester le hash
@@ -356,14 +353,14 @@ describe('AnalyticsTrackerService', () => {
         '1.2.3.4',
         NORMAL_UA,
       );
-      const firstCall = db.values.mock.calls[0][0] as { sessionHash: string };
+      const [firstCall] = db.values.mock.calls[0] as [{ sessionHash: string }];
 
       await service.track(
         { type: 'page_view', url: '/b' },
         '1.2.3.4',
         NORMAL_UA,
       );
-      const secondCall = db.values.mock.calls[1][0] as { sessionHash: string };
+      const [secondCall] = db.values.mock.calls[1] as [{ sessionHash: string }];
 
       expect(firstCall.sessionHash).toBe(secondCall.sessionHash);
       expect(firstCall.sessionHash).toHaveLength(64); // SHA256 hex = 64 chars
@@ -378,9 +375,9 @@ describe('AnalyticsTrackerService', () => {
         '1.2.3.4',
         NORMAL_UA,
       );
-      const { sessionHash } = db.values.mock.calls[0][0] as {
-        sessionHash: string;
-      };
+      const [{ sessionHash }] = db.values.mock.calls[0] as [
+        { sessionHash: string },
+      ];
 
       // Sans clé, 4 milliards d'IPv4 suffisent à retrouver l'adresse à partir de l'empreinte
       const unkeyed = createHash('sha256')
@@ -393,11 +390,11 @@ describe('AnalyticsTrackerService', () => {
       db.limit.mockResolvedValue([]);
       db.returning.mockResolvedValue([{ id: 'x' }]);
       const other = new AnalyticsTrackerService(
-        db as never,
-        {
-          corsOrigins: [],
-          jwtSecret: 'un-autre-secret',
-        } as unknown as AppConfigService,
+        asDatabase(db),
+        createTestConfig({
+          CORS_ORIGINS: '',
+          JWT_SECRET: 'un-autre-secret-de-test-de-32-caracteres',
+        }),
       );
 
       await service.track(
@@ -422,8 +419,9 @@ describe('AnalyticsTrackerService', () => {
         '1.2.3.4',
         NORMAL_UA,
       );
-      const day1Hash = (db.values.mock.calls[0][0] as { sessionHash: string })
-        .sessionHash;
+      const [{ sessionHash: day1Hash }] = db.values.mock.calls[0] as [
+        { sessionHash: string },
+      ];
 
       jest.setSystemTime(new Date('2026-04-27T10:30:00Z')); // J+1
       await service.track(
@@ -431,8 +429,9 @@ describe('AnalyticsTrackerService', () => {
         '1.2.3.4',
         NORMAL_UA,
       );
-      const day2Hash = (db.values.mock.calls[1][0] as { sessionHash: string })
-        .sessionHash;
+      const [{ sessionHash: day2Hash }] = db.values.mock.calls[1] as [
+        { sessionHash: string },
+      ];
 
       expect(day1Hash).not.toBe(day2Hash);
     });
@@ -482,7 +481,7 @@ describe('AnalyticsTrackerService', () => {
       );
 
       const where = JSON.stringify(
-        db.where.mock.calls[0][0],
+        (db.where.mock.calls[0] as [unknown])[0],
         (_k, v: unknown) =>
           typeof v === 'object' && v !== null && 'table' in v ? undefined : v,
       );

@@ -21,8 +21,20 @@ import { trackEventSchema } from './dto/track-event.dto';
 // Collecte publique comptée par IP ; statistiques de l'admin comptées par compte, chaque agrégation
 // étant une requête coûteuse.
 export function analyticsRoutes(
-  tracker: AnalyticsTrackerService,
-  stats: AnalyticsStatsService,
+  tracker: Pick<AnalyticsTrackerService, 'track'>,
+  stats: Pick<
+    AnalyticsStatsService,
+    | 'overview'
+    | 'chart'
+    | 'metrics'
+    | 'active'
+    | 'projects'
+    | 'articles'
+    | 'articlesRead'
+    | 'cta'
+    | 'events'
+    | 'cvDownloads'
+  >,
   requireAuth: RequireAuth,
 ) {
   return (
