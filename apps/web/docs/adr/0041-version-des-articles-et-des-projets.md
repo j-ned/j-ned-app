@@ -1,6 +1,7 @@
 # ADR-0041 — Version entière des articles et des projets, écriture conditionnelle par `If-Match`
 
-- **Statut** : proposé (2026-11-22), révisé le même jour après revue (412 au lieu de 409)
+- **Statut** : accepté et appliqué (2026-11-22) : révisé après revue (412 au lieu de 409), livré
+  par la PR #80
 - **Date** : 2026-11-22
 - **Spec** : 041 (fraîcheur des données, section « Éditeurs : version plus récente enregistrée
   ailleurs »)
