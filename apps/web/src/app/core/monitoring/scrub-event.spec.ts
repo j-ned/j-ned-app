@@ -91,6 +91,31 @@ describe('scrubEvent', () => {
 
     expect(scrubEvent(event)).toEqual({ type: undefined, request: undefined });
   });
+
+  it('given a server request with a query string field and proxy credentials, when scrubbed, then they are dropped', () => {
+    const scrubbed = scrubEvent(
+      anEvent({
+        url: '/blog/article?token=x',
+        query_string: 'token=x',
+        headers: {
+          'Proxy-Authorization': 'Basic t',
+          'set-cookie': 'session=s',
+          'user-agent': 'ua',
+        },
+      }),
+    );
+
+    expect(scrubbed.request).toEqual({ url: '/blog/article', headers: { 'user-agent': 'ua' } });
+  });
+
+  it('given a user carrying an IP address, when scrubbed, then the address is dropped and the rest kept', () => {
+    const scrubbed = scrubEvent({
+      type: undefined,
+      user: { id: 'u-1', ip_address: '203.0.113.7' },
+    });
+
+    expect(scrubbed.user).toEqual({ id: 'u-1' });
+  });
 });
 
 describe('scrubEvent stack frames', () => {

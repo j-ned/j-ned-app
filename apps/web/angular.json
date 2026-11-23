@@ -33,7 +33,7 @@
               }
             ],
             "styles": ["src/styles.css"],
-            "externalDependencies": ["jsdom"],
+            "externalDependencies": ["jsdom", "@sentry/node"],
             "security": {
               "allowedHosts": ["nedellec-julien.fr"]
             }

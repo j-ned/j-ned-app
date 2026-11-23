@@ -5,12 +5,15 @@ import { buildSitemap, type SitemapPost } from './sitemap';
 
 export type FeedTarget = 'sitemap' | 'rss';
 
+export type FeedErrorReporter = (error: unknown, report: { readonly message: string }) => void;
+
 type FeedHandlerOptions = {
   readonly apiBaseUrl: string;
   readonly fetch: typeof fetch;
   readonly startedAt: Date;
   // Absent sous `ng serve`.
   readonly ssrForwardSecret?: string | null;
+  readonly reportError: FeedErrorReporter;
 };
 
 export type FeedHandler = (
@@ -32,6 +35,7 @@ export function createFeedHandler({
   fetch,
   startedAt,
   ssrForwardSecret = null,
+  reportError,
 }: FeedHandlerOptions): FeedHandler {
   // Clés de stockage empreintées (`<id>-<sha8>`) : une couverture mesurée ne change plus.
   const enclosures = new Map<string, RssEnclosure>();
@@ -119,7 +123,7 @@ export function createFeedHandler({
       });
     } catch (error) {
       // 503 : nginx sert alors la dernière copie du flux (`proxy_cache_use_stale`).
-      console.error('Feed unavailable:', error);
+      reportError(error, { message: 'Feed unavailable:' });
       return new Response(null, { status: 503, headers: { 'Cache-Control': 'no-store' } });
     }
   };

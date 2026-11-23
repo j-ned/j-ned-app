@@ -1,6 +1,11 @@
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest';
 import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
-import { createFeedHandler, type FeedHandler, type FeedTarget } from './feed-handler';
+import {
+  createFeedHandler,
+  type FeedErrorReporter,
+  type FeedHandler,
+  type FeedTarget,
+} from './feed-handler';
 
 const API = 'http://api:3000/api';
 const SITE = 'https://nedellec-julien.fr';
@@ -39,11 +44,12 @@ function anApi(
   });
 }
 
-function aHandler(api: typeof fetch): FeedHandler {
+function aHandler(api: typeof fetch, reportError: FeedErrorReporter = vi.fn()): FeedHandler {
   return createFeedHandler({
     apiBaseUrl: API,
     fetch: api,
     startedAt: new Date('2026-10-10T06:30:00Z'),
+    reportError,
   });
 }
 
@@ -170,6 +176,23 @@ describe('createFeedHandler', () => {
   );
 
   it.each<FeedTarget>(['sitemap', 'rss'])(
+    'Given the API is unreachable When the %s is requested Then the failure is reported with its cause',
+    async (target) => {
+      const reportError = vi.fn<FeedErrorReporter>();
+      const cause = new TypeError('fetch failed');
+      const api = anApi({
+        [PROJECTS_URL]: () => Promise.reject(cause),
+        [POSTS_URL]: () => Promise.reject(cause),
+        [FULL_POSTS_URL]: () => Promise.reject(cause),
+      });
+
+      await serve(aHandler(api, reportError), target);
+
+      expect(reportError).toHaveBeenCalledExactlyOnceWith(cause, { message: 'Feed unavailable:' });
+    },
+  );
+
+  it.each<FeedTarget>(['sitemap', 'rss'])(
     'Given the API never answers When the %s is requested Then it answers 503 after five seconds, not before',
     async (target) => {
       vi.useFakeTimers();
@@ -202,6 +225,7 @@ describe('createFeedHandler', () => {
       fetch: api,
       startedAt: new Date('2026-10-10T06:30:00Z'),
       ssrForwardSecret: 'shared-secret',
+      reportError: vi.fn(),
     });
 
     await handler('rss', '203.0.113.7');

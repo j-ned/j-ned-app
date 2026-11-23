@@ -5,7 +5,7 @@ type StreamedSpan = Parameters<NonNullable<BrowserOptions['beforeSendSpan']>>[0]
 
 const FILTERED = '[Filtered]';
 const FILTERED_BODY_KEYS = ['password', 'newPassword', 'currentPassword', 'code', 'token', 'email'];
-const DROPPED_HEADERS = ['authorization', 'cookie'];
+const DROPPED_HEADERS = ['authorization', 'proxy-authorization', 'cookie', 'set-cookie'];
 
 const withoutQueryAndFragment = (url: string): string => url.replace(/[?#][\s\S]*$/, '');
 
@@ -58,12 +58,27 @@ const withScrubbedFrames = ({ values, ...exception }: EventException): EventExce
   }),
 });
 
+type EventUser = NonNullable<ErrorEvent['user']>;
+
+const withoutIpAddress = ({ ip_address: _ipAddress, ...user }: EventUser): EventUser => user;
+
+// Partagé par le navigateur et le rendu serveur : côté Node, la requête porte aussi `query_string`.
 export function scrubEvent(event: ErrorEvent): ErrorEvent {
-  const scrubbed = event.exception
+  const withFrames = event.exception
     ? { ...event, exception: withScrubbedFrames(event.exception) }
     : event;
+  const scrubbed = withFrames.user
+    ? { ...withFrames, user: withoutIpAddress(withFrames.user) }
+    : withFrames;
   if (!scrubbed.request) return scrubbed;
-  const { cookies: _cookies, url, headers, data, ...request } = scrubbed.request;
+  const {
+    cookies: _cookies,
+    query_string: _queryString,
+    url,
+    headers,
+    data,
+    ...request
+  } = scrubbed.request;
   return {
     ...scrubbed,
     request: {

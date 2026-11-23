@@ -31,8 +31,8 @@ RUN pnpm run build --configuration production \
  && test -f dist/angular-portfolio-app/server/csp-manifest.json
 
 # ==============================================================================
-# Stage 3 — Dépendances d'exécution du bundle serveur : `jsdom` est externe
-# (`externalDependencies` d'angular.json), importé par le rendu des articles.
+# Stage 3 — Dépendances d'exécution du bundle serveur : `jsdom` (rendu des articles) et
+# `@sentry/node` (erreurs du rendu) sont externes (`externalDependencies` d'angular.json).
 # ==============================================================================
 FROM node:26-alpine AS deps
 
@@ -394,6 +394,12 @@ wait "$nginx_pid" "$node_pid"
 [ "$stopping" = 1 ] && exit 0
 exit 1
 START
+
+# Release du déploiement (`sha-<commit>`, passée par la CI) : tag Sentry des erreurs du rendu. En fin
+# d'étape : changer de commit ne refait que cette couche. `NODE_ENV` : environnement Sentry, comme l'API.
+ARG APP_RELEASE=
+ENV SENTRY_RELEASE=${APP_RELEASE} \
+    NODE_ENV=production
 
 EXPOSE 3000
 

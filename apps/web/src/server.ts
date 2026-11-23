@@ -12,7 +12,15 @@ import { hardenCsp, type CspBuildManifest } from './server/csp/harden-csp';
 import { nodeSha256 } from './server/csp/node-sha256';
 import { dispatchSsrRequest } from './server/dispatch-ssr-request';
 import { createFeedHandler } from './server/feeds/feed-handler';
+import { createServerErrorReporter } from './server/monitoring/server-error-reporter';
 import { visitorIpFromProxy } from './server/visitor-ip';
+
+// Avant tout rendu : sans `SENTRY_SSR_DSN`, les erreurs ne vont qu'au journal du conteneur.
+const errors = createServerErrorReporter({
+  SENTRY_SSR_DSN: process.env['SENTRY_SSR_DSN'],
+  SENTRY_RELEASE: process.env['SENTRY_RELEASE'],
+  NODE_ENV: process.env['NODE_ENV'],
+});
 
 const engine = new AngularNodeAppEngine();
 
@@ -31,7 +39,13 @@ const ssrForwardSecret = process.env['SSR_FORWARD_SECRET'] || null;
 
 // `lastmod` des pages statiques du sitemap : le démarrage du serveur suit le déploiement du code.
 const feeds = apiBaseUrl
-  ? createFeedHandler({ apiBaseUrl, fetch, startedAt: new Date(), ssrForwardSecret })
+  ? createFeedHandler({
+      apiBaseUrl,
+      fetch,
+      startedAt: new Date(),
+      ssrForwardSecret,
+      reportError: errors.report,
+    })
   : null;
 
 // Écrit par le postbuild à côté de ce module ; absent sous `ng serve`, où la CSP de `src/index.html`
@@ -116,11 +130,18 @@ if (isMainModule(import.meta.url)) {
         if (!handled) res.writeHead(404).end();
       })
       .catch((error: unknown) => {
-        console.error(error);
+        errors.report(error, {
+          message: 'SSR render failed:',
+          request: { method: req.method, url: req.url },
+        });
         if (!res.headersSent) res.writeHead(500);
         res.end();
       });
   }).listen(LISTEN_PORT, LISTEN_HOST);
   // Arrêt du conteneur : les rendus en cours se terminent, aucun nouveau n'est accepté.
-  process.once('SIGTERM', () => server.close(() => process.exit(0)));
+  process.once('SIGTERM', () =>
+    server.close(() => {
+      void errors.flush().finally(() => process.exit(0));
+    }),
+  );
 }
