@@ -2,6 +2,7 @@ import { createHash } from 'node:crypto';
 import { AnalyticsTrackerService } from './analytics-tracker.service';
 import { asDatabase } from '../testing/mock-database';
 import { createTestConfig } from '../testing/test-config';
+import { defined } from '../testing/defined';
 import { createMockDb } from '../testing/test-utils';
 import * as isbotModule from 'isbot';
 import { SQL } from 'drizzle-orm';
@@ -11,6 +12,19 @@ const renderSet = (set: unknown) => {
   const { duration } = set as { duration: unknown };
   expect(duration).toBeInstanceOf(SQL);
   return new PgDialect({ casing: 'snake_case' }).sqlToQuery(duration as SQL);
+};
+
+// Une ligne insérée sans empreinte texte fait échouer le test au lieu de comparer deux `undefined`.
+const sessionHashOf = (row: unknown): string => {
+  if (
+    typeof row !== 'object' ||
+    row === null ||
+    !('sessionHash' in row) ||
+    typeof row.sessionHash !== 'string'
+  ) {
+    throw new Error('Expected an inserted row with a string sessionHash');
+  }
+  return row.sessionHash;
 };
 
 jest.mock('isbot');
@@ -89,7 +103,7 @@ describe('AnalyticsTrackerService', () => {
       // Incrément atomique côté Postgres : deux beacons simultanés s'additionnent au lieu de
       // s'écraser (lecture puis réécriture = incrément perdu).
       expect(db.update).toHaveBeenCalledTimes(1);
-      const [set] = db.set.mock.calls[0] as [unknown];
+      const [set] = defined(db.set.mock.calls[0]);
       expect(renderSet(set)).toMatchObject({
         sql: 'COALESCE("page_view"."duration", 0) + $1',
         params: [5],
@@ -353,17 +367,17 @@ describe('AnalyticsTrackerService', () => {
         '1.2.3.4',
         NORMAL_UA,
       );
-      const [firstCall] = db.values.mock.calls[0] as [{ sessionHash: string }];
+      const firstHash = sessionHashOf(defined(db.values.mock.calls[0])[0]);
 
       await service.track(
         { type: 'page_view', url: '/b' },
         '1.2.3.4',
         NORMAL_UA,
       );
-      const [secondCall] = db.values.mock.calls[1] as [{ sessionHash: string }];
+      const secondHash = sessionHashOf(defined(db.values.mock.calls[1])[0]);
 
-      expect(firstCall.sessionHash).toBe(secondCall.sessionHash);
-      expect(firstCall.sessionHash).toHaveLength(64); // SHA256 hex = 64 chars
+      expect(firstHash).toBe(secondHash);
+      expect(firstHash).toHaveLength(64); // SHA256 hex = 64 chars
     });
 
     it("ne se recalcule pas depuis l'IP seule : différent du SHA-256 brut de ip|ua|jour", async () => {
@@ -375,9 +389,7 @@ describe('AnalyticsTrackerService', () => {
         '1.2.3.4',
         NORMAL_UA,
       );
-      const [{ sessionHash }] = db.values.mock.calls[0] as [
-        { sessionHash: string },
-      ];
+      const sessionHash = sessionHashOf(defined(db.values.mock.calls[0])[0]);
 
       // Sans clé, 4 milliards d'IPv4 suffisent à retrouver l'adresse à partir de l'empreinte
       const unkeyed = createHash('sha256')
@@ -404,8 +416,8 @@ describe('AnalyticsTrackerService', () => {
       );
       await other.track({ type: 'page_view', url: '/a' }, '1.2.3.4', NORMAL_UA);
 
-      const [first, second] = db.values.mock.calls.map(
-        ([row]) => (row as { sessionHash: string }).sessionHash,
+      const [first, second] = db.values.mock.calls.map(([row]) =>
+        sessionHashOf(row),
       );
       expect(first).not.toBe(second);
     });
@@ -419,9 +431,7 @@ describe('AnalyticsTrackerService', () => {
         '1.2.3.4',
         NORMAL_UA,
       );
-      const [{ sessionHash: day1Hash }] = db.values.mock.calls[0] as [
-        { sessionHash: string },
-      ];
+      const day1Hash = sessionHashOf(defined(db.values.mock.calls[0])[0]);
 
       jest.setSystemTime(new Date('2026-04-27T10:30:00Z')); // J+1
       await service.track(
@@ -429,9 +439,7 @@ describe('AnalyticsTrackerService', () => {
         '1.2.3.4',
         NORMAL_UA,
       );
-      const [{ sessionHash: day2Hash }] = db.values.mock.calls[1] as [
-        { sessionHash: string },
-      ];
+      const day2Hash = sessionHashOf(defined(db.values.mock.calls[1])[0]);
 
       expect(day1Hash).not.toBe(day2Hash);
     });
@@ -481,13 +489,13 @@ describe('AnalyticsTrackerService', () => {
       );
 
       const where = JSON.stringify(
-        (db.where.mock.calls[0] as [unknown])[0],
+        defined(db.where.mock.calls[0])[0],
         (_k, v: unknown) =>
           typeof v === 'object' && v !== null && 'table' in v ? undefined : v,
       );
       expect(where).toContain('/offres/x');
       expect(where).not.toContain('#demande');
-      const [set] = db.set.mock.calls[0] as [unknown];
+      const [set] = defined(db.set.mock.calls[0]);
       expect(renderSet(set).params).toEqual([6]);
     });
 

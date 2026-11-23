@@ -2,6 +2,7 @@ import { type SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import { AnalyticsAggregatorService } from './analytics-aggregator.service';
 import { Logger } from '../common/logger';
+import { asDatabase } from '../testing/mock-database';
 import { createMockDb } from '../testing/test-utils';
 import * as aggregates from './analytics-aggregates';
 import type { DayAggregates } from './analytics-aggregates';
@@ -19,7 +20,7 @@ describe('AnalyticsAggregatorService', () => {
 
   beforeEach(() => {
     db = createMockDb();
-    service = new AnalyticsAggregatorService(db as never);
+    service = new AnalyticsAggregatorService(asDatabase(db));
     jest.useFakeTimers().setSystemTime(new Date('2026-04-26T01:00:00Z'));
   });
 

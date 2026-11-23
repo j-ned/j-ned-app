@@ -36,7 +36,7 @@ describe('StorageService', () => {
     it('retourne { stream, contentType, contentLength } depuis la réponse S3', async () => {
       const stream = sdkStreamMixin(Readable.from(Buffer.from('content')));
       s3Mock.on(GetObjectCommand).resolves({
-        Body: stream as never,
+        Body: stream,
         ContentType: 'image/webp',
         ContentLength: 7,
       });
@@ -48,7 +48,7 @@ describe('StorageService', () => {
 
     it('contentType fallback à application/octet-stream si absent', async () => {
       const stream = sdkStreamMixin(Readable.from(Buffer.from('x')));
-      s3Mock.on(GetObjectCommand).resolves({ Body: stream as never });
+      s3Mock.on(GetObjectCommand).resolves({ Body: stream });
       const result = await service.get('my-bucket', 'foo.txt');
       expect(result.contentType).toBe('application/octet-stream');
       expect(result.contentLength).toBe(0);

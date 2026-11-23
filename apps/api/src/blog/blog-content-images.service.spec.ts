@@ -2,8 +2,13 @@ import type { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { UploadedFile } from '../common/http';
 import { Logger } from '../common/logger';
+import { defined } from '../testing/defined';
+import { asDatabase } from '../testing/mock-database';
 import { createMockDb } from '../testing/test-utils';
+import { ImageOptimizer } from '../storage/image-optimizer.service';
+import { notStubbed } from '../testing/stub';
 import { contentHash } from '../storage/s3-utils';
+import { StorageService } from '../storage/storage.service';
 import { BlogContentImagesService } from './blog-content-images.service';
 
 const BUCKET = 'portfolio-storage';
@@ -15,27 +20,40 @@ const KEY_B =
 const cite = (key: string) =>
   `![alt](https://api.nedellec-julien.fr/api/storage/${BUCKET}/${key})`;
 
+// Doublures des méthodes de `StorageService` que le service atteint, posées sur une vraie instance
+// sans client S3 : une autre méthode échouerait.
+const stubStorage = () => ({
+  upload: jest
+    .fn<
+      ReturnType<StorageService['upload']>,
+      Parameters<StorageService['upload']>
+    >()
+    .mockResolvedValue(undefined),
+  delete: jest
+    .fn<
+      ReturnType<StorageService['delete']>,
+      Parameters<StorageService['delete']>
+    >()
+    .mockResolvedValue(undefined),
+  getPublicUrl: jest.fn(
+    (bucket: string, key: string) => `/storage/${bucket}/${key}`,
+  ),
+});
+
 describe('BlogContentImagesService', () => {
   let service: BlogContentImagesService;
   let db: ReturnType<typeof createMockDb>;
-  let storage: {
-    upload: jest.Mock;
-    delete: jest.Mock;
-    getPublicUrl: jest.Mock;
-  };
+  let storage: ReturnType<typeof stubStorage>;
   const avif = Buffer.from('avif-bytes');
-  const optimize = jest.fn();
+  const optimize = jest.fn<
+    ReturnType<ImageOptimizer['optimize']>,
+    Parameters<ImageOptimizer['optimize']>
+  >();
 
   beforeEach(() => {
     jest.clearAllMocks();
     db = createMockDb();
-    storage = {
-      upload: jest.fn().mockResolvedValue(undefined),
-      delete: jest.fn().mockResolvedValue(undefined),
-      getPublicUrl: jest.fn(
-        (bucket: string, key: string) => `/storage/${bucket}/${key}`,
-      ),
-    };
+    storage = stubStorage();
     optimize.mockResolvedValue({
       buffer: avif,
       mimetype: 'image/avif',
@@ -44,9 +62,14 @@ describe('BlogContentImagesService', () => {
       height: 900,
     });
     service = new BlogContentImagesService(
-      db as never,
-      storage as never,
-      { optimize } as never,
+      asDatabase(db),
+      Object.assign(new StorageService(null), storage),
+      Object.assign(new ImageOptimizer(), {
+        optimize,
+        toWidth: notStubbed('ImageOptimizer.toWidth'),
+        toShareCard: notStubbed('ImageOptimizer.toShareCard'),
+        toPortrait: notStubbed('ImageOptimizer.toPortrait'),
+      }),
     );
   });
 
@@ -58,12 +81,9 @@ describe('BlogContentImagesService', () => {
 
       expect(optimize).toHaveBeenCalledWith(file.buffer);
       expect(storage.upload).toHaveBeenCalledTimes(1);
-      const [bucket, key, body, mimetype] = storage.upload.mock.calls[0] as [
-        string,
-        string,
-        Buffer,
-        string,
-      ];
+      const [bucket, key, body, mimetype] = defined(
+        storage.upload.mock.calls[0],
+      );
       expect(bucket).toBe(BUCKET);
       expect(key).toMatch(
         /^blog-content\/[0-9a-f-]{36}-[0-9a-f]{8}-1600x900\.avif$/,
@@ -76,7 +96,7 @@ describe('BlogContentImagesService', () => {
     it('Given an image, When uploaded, Then the public URL and the intrinsic dimensions are returned', async () => {
       const result = await service.upload(file);
 
-      const key = (storage.upload.mock.calls[0] as string[])[1];
+      const [, key] = defined(storage.upload.mock.calls[0]);
       expect(storage.getPublicUrl).toHaveBeenCalledWith(BUCKET, key);
       expect(result).toEqual({
         url: `/storage/${BUCKET}/${key}`,
