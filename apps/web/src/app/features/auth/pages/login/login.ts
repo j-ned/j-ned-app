@@ -68,6 +68,7 @@ const LOGIN_FAILURE_MESSAGES = {
                   />
                   <input
                     id="email"
+                    data-testid="login-email"
                     type="email"
                     [formField]="form.email"
                     autocomplete="email"
@@ -93,6 +94,7 @@ const LOGIN_FAILURE_MESSAGES = {
                   />
                   <input
                     id="password"
+                    data-testid="login-password"
                     type="password"
                     [formField]="form.password"
                     autocomplete="current-password"

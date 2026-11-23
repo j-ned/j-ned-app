@@ -80,6 +80,7 @@ const EMPTY = { password: '' };
                 <label for="disable-pw" class="form-label">Mot de passe</label>
                 <input
                   id="disable-pw"
+                  data-testid="twofa-disable-password"
                   type="password"
                   [formField]="disableForm.password"
                   autocomplete="current-password"
