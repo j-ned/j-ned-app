@@ -3,6 +3,7 @@ import { BehaviorSubject, firstValueFrom, of, throwError } from 'rxjs';
 import { vi } from 'vitest';
 import { BlogGateway } from '@features/blog/domain/gateways/blog.gateway';
 import { makeBlogPost } from '@features/blog/testing/blog-post-builders';
+import { makeProject } from '@features/projects/testing/project-builders';
 import { ProjectsGateway } from '@features/projects/domain/gateways/projects.gateway';
 import { InMemoryHomeGateway } from '@features/home/infra/gateways/in-memory-home.gateway';
 import { STATIC_HERO } from '../data/home.static-data';
@@ -30,7 +31,7 @@ describe('InMemoryHomeGateway', () => {
   });
 
   it('getHomeBundle composes the static hero, the featured projects and the latest posts, nothing else', async () => {
-    const fakeProjects = [{ id: 1, slug: 'proj-1', title: 'Project 1' } as never];
+    const fakeProjects = [makeProject({ id: 'proj-1', slug: 'proj-1', title: 'Project 1' })];
     const post = makeBlogPost({ slug: 'a', publishedAt: '2026-09-01T08:00:00Z' });
     projectsStub.getFeaturedProjects.mockReturnValue(of(fakeProjects));
     blogStub.getPublishedPosts.mockReturnValue(of([post]));
@@ -69,7 +70,7 @@ describe('InMemoryHomeGateway', () => {
     'Given %s request fails When the bundle is read Then it still carries the static hero and the other source',
     async (_label, failing) => {
       const post = makeBlogPost({ slug: 'a', publishedAt: '2026-09-01T08:00:00Z' });
-      const project = { id: 1 } as never;
+      const project = makeProject();
       projectsStub.getFeaturedProjects.mockReturnValue(
         failing === 'projects' ? throwError(() => new Error('502')) : of([project]),
       );

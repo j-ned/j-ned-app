@@ -211,12 +211,9 @@ describe('toProjectInput', () => {
 
   it('Given repeated rows marked by the form When the payload is built Then each row is copied field by field', () => {
     const mark = Symbol('row identity');
-    const draft = draftOf({
-      techChoices: [{ techno: 'NestJS', why: 'modulaire', [mark]: 1 } as never],
-      architectureDecisions: [
-        { decision: 'hexagonale', rationale: 'testable', [mark]: 2 } as never,
-      ],
-    });
+    const techChoice = { techno: 'NestJS', why: 'modulaire', [mark]: 1 };
+    const decision = { decision: 'hexagonale', rationale: 'testable', [mark]: 2 };
+    const draft = draftOf({ techChoices: [techChoice], architectureDecisions: [decision] });
 
     const payload = toProjectInput(draft, 'demo');
     const rows = [...(payload.techChoices ?? []), ...(payload.architectureDecisions ?? [])];
