@@ -1,4 +1,5 @@
 import { writeToClipboard } from './write-to-clipboard';
+import { withdrawClipboard } from '@shared/testing/clipboard-availability';
 
 const LINK =
   'https://api.example.test/api/booking/feed/stubFeedToken000000000000000000000000000000.ics';
@@ -35,7 +36,7 @@ describe('writeToClipboard', () => {
   });
 
   it('Given a page without clipboard access When the text is written Then the copy is reported failed without throwing', async () => {
-    vi.spyOn(navigator, 'clipboard', 'get').mockReturnValue(undefined as unknown as Clipboard);
+    withdrawClipboard();
 
     await expect(writeToClipboard(LINK)).resolves.toBe(false);
   });

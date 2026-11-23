@@ -18,6 +18,7 @@ import { SectionScroller } from '@core/navigation/section-scroller';
 import { ActiveSection } from '@core/navigation/active-section';
 import { ContactForm } from '@features/contact/application/contact-form';
 import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
+import { stubContactGateway } from '@features/contact/testing/stub-contact-gateway';
 import type { HomeBundle } from '@features/home/domain/models/home-bundle.model';
 import type { Project } from '@features/projects/domain/models/project.model';
 import { makeProject } from '@features/projects/testing/project-builders';
@@ -39,19 +40,7 @@ function makeHomeGateway(overrides: Partial<HomeGateway> = {}): HomeGateway {
   return {
     getHomeBundle: () => of(bundle()),
     ...overrides,
-  } as unknown as HomeGateway;
-}
-
-function makeContactGateway(): ContactGateway {
-  return {
-    submitContactForm: () => of({ success: true, message: 'OK' }),
-    getAllMessages: () => of([]),
-    markMessageAsRead: vi.fn(),
-    deleteMessage: vi.fn(),
-    getUnreadCount: () => of(0),
-    invalidateUnreadCount: vi.fn(),
-    markAllRead: () => of({ count: 0 }),
-  } as unknown as ContactGateway;
+  };
 }
 
 type AnalyticsStub = {
@@ -157,7 +146,7 @@ async function renderHomeTemplate(
         }),
       },
       { provide: SectionScroller, useValue: scroller },
-      { provide: ContactGateway, useValue: makeContactGateway() },
+      { provide: ContactGateway, useValue: stubContactGateway() },
       { provide: AnalyticsGateway, useValue: analytics.gateway },
     ],
     deferBlockBehavior: DeferBlockBehavior.Manual,

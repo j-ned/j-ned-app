@@ -302,7 +302,7 @@ server {
         include /etc/nginx/snippets/api-response-headers.conf;
     }
 
-    # Reste de l'API, relayé par l'origine du site (ADR-0034) : pour le navigateur, site et API sont
+    # Reste de l'API, relayé par l'origine du site : pour le navigateur, site et API sont
     # une seule origine, donc ni CORS ni cookie partagé entre sous-domaines (cookie `__Host-`,
     # `SameSite=Strict`). `^~` : la regex d'extensions ne capte pas une URL d'API. Les relais plus
     # précis ci-dessus (images, mesure) gardent leur cache et leurs restrictions.
@@ -326,7 +326,7 @@ server {
         include /etc/nginx/snippets/api-response-headers.conf;
     }
 
-    # Offres et prise de rendez-vous retirées (spec 029) : 410 Gone, qui désindexe plus vite qu'un
+    # Offres et prise de rendez-vous retirées : 410 Gone, qui désindexe plus vite qu'un
     # 404 et dit que la page ne reviendra pas. Le corps est le shell client (page introuvable), servi
     # avec ce même statut.
     location ~ ^/(offres|offre-site-industrie|rendez-vous)(/|$) {
