@@ -79,7 +79,12 @@ function visitorForwardedFor(req: IncomingMessage): string | null {
 
 function requestContext(req: IncomingMessage): SsrRequestContext | undefined {
   return apiBaseUrl
-    ? { apiBaseUrl, visitorForwardedFor: visitorForwardedFor(req), ssrForwardSecret }
+    ? {
+        apiBaseUrl,
+        visitorForwardedFor: visitorForwardedFor(req),
+        ssrForwardSecret,
+        reportError: errors.report,
+      }
     : undefined;
 }
 
