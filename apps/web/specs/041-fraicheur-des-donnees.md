@@ -67,7 +67,7 @@ rapport de la PR).
   et téléchargements), **journal des connexions**, **derniers messages de la vue d'ensemble** :
   données modifiées par les visiteurs ou par l'admin d'un autre onglet. Les listes d'articles et de
   projets passent par leur cache partagé : le compteur de la navigation suit. Intervalle minimal de
-  **15 s** pour tous les écrans de l'admin (`refreshAdminWhenVisible`, calcul dans « Limites »).
+  **2 s** pour tous les écrans de l'admin (`refreshAdminWhenVisible`, calcul dans « Limites »).
 - **`/blog`, `/projects`, page d'un projet, `/about`** : pages publiques rendues par le serveur, qui
   restaient figées une fois ouvertes. Même intervalle minimal que la PR D (2 s,
   `REFRESH_MIN_INTERVAL_MS`), une requête par retour au plus.
@@ -91,7 +91,7 @@ rapport de la PR).
    file de modération.
 4. **Écrans relus au retour** (liste ci-dessus), tous par `refreshWhenVisible`, qui prend désormais
    un intervalle minimal (`minIntervalMs`, 2 s par défaut, gardé pour les pages publiques). L'admin
-   passe par `refreshAdminWhenVisible` (`features/admin/application`), à 15 s.
+   passe par `refreshAdminWhenVisible` (`features/admin/application`), à 2 s depuis le quota par compte de l'API (audit 043, F008).
 5. **Une relecture de fond est silencieuse.** L'intercepteur `errorToastInterceptor` toaste toute
    erreur sans `SKIP_ERROR_TOAST` : une relecture au retour ou après une écriture affichait une
    alerte (deux pour les lectures relancées). Le cache partagé passe `background: true` à sa lecture
@@ -142,15 +142,16 @@ rapport de la PR).
   toast ni état d'erreur : l'écran garde une version peut-être périmée, sans le dire. La relecture
   suivante la remplace. Un premier chargement en échec, lui, montre toujours l'état d'erreur de la
   page et, selon la lecture, le toast de l'intercepteur, comme avant.
-- **Quota de l'admin.** L'API limite chaque lecture de l'admin à 10 par minute, par IP et par route
-  (`DEFAULT_THROTTLE`, `apps/api/src/common/throttle.ts`). Chaque retour sur une page de l'admin lit
-  au moins `unread-count` et `pending-count` (navigation), plus la liste de l'écran ouvert
-  (`/contact/messages` pour la boîte de réception). Avec 2 s d'intervalle, 30 retours par minute
-  l'épuisaient. À 15 s, un écran relit au plus 4 fois par minute et par route, ce qui laisse 6
-  lectures aux actions (« marquer lu », « tout marquer lu », suppression : chacune relit
-  `unread-count`) et aux navigations. Au-delà de 6 actions par minute sur la même route, l'API
-  répond 429 ; la relecture de fond reste alors silencieuse et garde l'affichage. Les pages
-  publiques gardent 2 s (quota de 120 lectures par minute et par visiteur).
+- **Quota de l'admin.** L'API compte les lectures de l'admin par compte et par route, 60 par minute
+  (`ADMIN_READ_THROTTLE`, `throttleSession` dans `apps/api/src/common/throttle.ts`), quelle que soit
+  l'IP ; seules les requêtes refusées en 401 restent comptées par IP (10 par minute). Chaque retour
+  sur une page de l'admin lit au moins `unread-count` et `pending-count` (navigation), plus la liste
+  de l'écran ouvert ; chaque route a son propre compteur, le nombre de routes relues ne s'additionne
+  donc pas. L'admin relit au plus toutes les 2 s, comme les pages publiques : 30 retours par minute
+  et par route, ce qui laisse 30 lectures aux actions (« marquer lu », « tout marquer lu »,
+  suppression : chacune relit `unread-count`) et aux navigations. Au-delà, l'API répond 429 ; la
+  relecture de fond reste alors silencieuse et garde l'affichage. Les écritures gardent leur quota
+  par IP (10 par minute et par route, 60 pour la galerie et la modération).
 - Une suppression ou un « marquer lu » en cours peut croiser une relecture de la boîte de réception
   ou de la file de modération ; la relecture suivante remet l'état du serveur (même limite que la
   PR D pour les commentaires).
@@ -164,7 +165,7 @@ l'entité a été enregistrée ailleurs depuis son chargement, sans jamais écra
 
 **Comportement.**
 
-- Au retour sur l'onglet (`refreshAdminWhenVisible`, 15 s au plus souvent), l'éditeur relit l'entité
+- Au retour sur l'onglet (`refreshAdminWhenVisible`, 2 s au plus souvent), l'éditeur relit l'entité
   **en arrière-plan et sans toast**, et compare sa `version` (entier, incrémenté par l'API à chaque
   écriture) à celle du document édité. Jamais le contenu du brouillon.
 - Rien n'est relu pour un nouvel article ou projet jamais enregistré, ni pendant un enregistrement.

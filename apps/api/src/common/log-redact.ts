@@ -97,11 +97,15 @@ const scrubSerializedError = (err: SerializedError): SerializedError => {
 // Valeurs liées masquées aussi dans les causes, que pino concatène à la pile. pino-http passe l'erreur
 // déjà sérialisée (`wrapErrorSerializer`) ; une `Error` brute (pino seul) est d'abord sérialisée.
 export function serializeError(err: unknown): SerializedError {
-  const serialized =
-    err instanceof Error
-      ? (pino.stdSerializers.err(err) as unknown as SerializedError)
-      : (err as SerializedError);
-  return scrubSerializedError(serialized);
+  if (err instanceof Error) {
+    return scrubSerializedError({ ...pino.stdSerializers.err(err) });
+  }
+  return scrubSerializedError(isRecord(err) ? err : { message: String(err) });
+}
+
+// Une valeur levée qui n'est pas un objet (chaîne, nombre, `null`) est journalisée comme un message.
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
 }
 
 // Un message chaîne qui recopie `err.message` (`track failed: ${e.message}`) perd ses paramètres liés.

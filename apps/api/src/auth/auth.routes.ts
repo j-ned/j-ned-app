@@ -14,6 +14,7 @@ import {
   AUTH_ATTEMPT_THROTTLE,
   PUBLIC_READ_THROTTLE,
   throttle,
+  throttleSession,
 } from '../common/throttle';
 import { parseDurationMs } from '../common/utils';
 import { AUTH_COOKIE_NAME, authCookieOptions } from './auth-cookie';
@@ -94,17 +95,24 @@ export function authRoutes({
         return c.json({ ok: true });
       })
 
-      .get('/me', throttle(PUBLIC_READ_THROTTLE), requireAuth, (c) => {
-        const user = c.var.user;
-        return c.json({
-          id: user.id,
-          email: user.email,
-          isTwoFactorEnabled: user.isTwoFactorEnabled,
-        });
-      })
+      .get(
+        '/me',
+        throttleSession(requireAuth, {
+          anonymous: PUBLIC_READ_THROTTLE,
+          account: PUBLIC_READ_THROTTLE,
+        }),
+        (c) => {
+          const user = c.var.user;
+          return c.json({
+            id: user.id,
+            email: user.email,
+            isTwoFactorEnabled: user.isTwoFactorEnabled,
+          });
+        },
+      )
 
       // Journal des connexions, paginé, du plus récent au plus ancien.
-      .get('/login-events', throttle(), requireAuth, async (c) => {
+      .get('/login-events', throttleSession(requireAuth), async (c) => {
         const query = queryParams(c, paginationSchema);
         return reply(c, await journal.findAll(parsePagination(query)));
       })

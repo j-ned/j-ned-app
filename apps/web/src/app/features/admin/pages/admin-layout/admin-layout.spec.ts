@@ -160,7 +160,7 @@ describe('AdminLayout: comptes de la navigation', () => {
     }).toEqual({ messages: '4 non lus', comments: '2 en attente' });
   });
 
-  it('Given the counts just reread When the tab comes back 3 s later Then they are not read again, to stay under the admin quota', async () => {
+  it('Given the counts just reread When the tab comes back 1 s later Then they are not read again, to stay under the admin quota', async () => {
     vi.useFakeTimers({ toFake: ['Date'] });
     vi.setSystemTime(Date.parse('2026-11-22T12:00:00.000Z'));
     const invalidateUnreadCount = vi.fn();
@@ -176,7 +176,7 @@ describe('AdminLayout: comptes de la navigation', () => {
     await renderShell('/admin');
 
     returnToTab();
-    vi.setSystemTime(Date.parse('2026-11-22T12:00:03.000Z'));
+    vi.setSystemTime(Date.parse('2026-11-22T12:00:01.000Z'));
     returnToTab();
     vi.useRealTimers();
 

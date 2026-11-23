@@ -119,6 +119,10 @@ barrel `schema/index.ts`. Style des contraintes : `login-events.ts` (`check()` n
 | `author_name`  | `text NULL`                          | visiteur : `NOT NULL`, 2 à 80 caractères ; propriétaire : `NULL`                              |
 | `author_email` | `text NULL`                          | visiteur : `NOT NULL` ; propriétaire : `NULL`                                                 |
 | `sender_hash`  | `text NULL`                          | HMAC de `quotaAddress(ip)` (IPv4, ou son /64 en IPv6, comme le quota) ; propriétaire : `NULL` |
+
+L'empreinte ne sert qu'à `PENDING_PER_SENDER` : la publication la remet à `NULL` (`publish`), et la
+migration `0038_published_comment_sender_hash.sql` l'efface des commentaires déjà publiés (audit 043,
+F019). Seuls les commentaires en attente la portent.
 | `body`         | `text NOT NULL`                      | `CHECK (char_length(body) BETWEEN 2 AND 2000)`                                                |
 | `created_at`   | `timestamptz NOT NULL DEFAULT now()` | ordre d'affichage                                                                             |
 
@@ -519,7 +523,7 @@ paragraphe) :
 
 - données : nom ou pseudo (publié), e-mail (jamais publié), message (publié après validation),
   date, empreinte non réversible de l'adresse IP (lutte contre les abus ; l'IP n'est pas
-  conservée) ;
+  conservée ; l'empreinte est effacée dès la publication du commentaire) ;
 - finalités : publier le commentaire après relecture, permettre à l'éditeur de te répondre ou de
   te joindre, limiter les abus ;
 - base légale : intérêt légitime de l'éditeur à animer et modérer le blog (à confirmer, cf. Points
