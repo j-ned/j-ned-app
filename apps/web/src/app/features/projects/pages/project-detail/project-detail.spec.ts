@@ -32,9 +32,7 @@ function setup(
   projects: Project[],
   extraProviders: Provider[] = [],
 ): ComponentFixture<ProjectDetail> {
-  const gateway = {
-    getAllProjects: () => of(projects as readonly Project[]),
-  } as unknown as ProjectsGateway;
+  const gateway = stubProjectsGateway({ getAllProjects: () => of(projects) });
   TestBed.configureTestingModule({
     providers: [
       provideRouter([]),
@@ -125,9 +123,9 @@ describe('ProjectDetail', () => {
 
   it('suit le clic sur un lien projet via AnalyticsGateway', async () => {
     const track = vi.fn();
-    const gateway = {
-      getAllProjects: () => of([project({ liveUrl: 'https://demo.test' })] as readonly Project[]),
-    } as unknown as ProjectsGateway;
+    const gateway = stubProjectsGateway({
+      getAllProjects: () => of([project({ liveUrl: 'https://demo.test' })]),
+    });
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),
@@ -163,14 +161,12 @@ describe('ProjectDetail', () => {
 
   it("affiche un état d'erreur avec relance quand la liste ne charge pas, sans rediriger", async () => {
     let calls = 0;
-    const gateway = {
+    const gateway = stubProjectsGateway({
       getAllProjects: () => {
         calls += 1;
-        return calls === 1
-          ? throwError(() => new Error('down'))
-          : of([project()] as readonly Project[]);
+        return calls === 1 ? throwError(() => new Error('down')) : of([project()]);
       },
-    } as unknown as ProjectsGateway;
+    });
     TestBed.configureTestingModule({
       providers: [
         provideRouter([]),

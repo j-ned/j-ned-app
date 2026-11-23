@@ -6,6 +6,7 @@ import { Header } from './header';
 import { NAV_LINKS } from './nav-items';
 import { AnalyticsGateway } from '@features/analytics/domain/gateways/analytics.gateway';
 import { CvGateway } from '@features/cv/domain/gateways/cv.gateway';
+import { stubAnalyticsGateway } from '@features/analytics/testing/stub-analytics-gateway';
 import { SectionScroller } from '@core/navigation/section-scroller';
 import { ThemeStore } from '@core/theme/theme-store';
 import { installSystemColorScheme } from '@core/theme/testing/system-color-scheme';
@@ -17,11 +18,11 @@ const THEME_STORAGE_KEY = 'j-ned:theme';
 const DESTINATIONS = ['blog', 'projects', 'about'] as const;
 
 function makeAnalyticsGateway(overrides: Partial<AnalyticsGateway> = {}): AnalyticsGateway {
-  return {
+  return stubAnalyticsGateway({
     trackCtaClick: vi.fn(),
     getActiveVisitors: () => EMPTY,
     ...overrides,
-  } as unknown as AnalyticsGateway;
+  });
 }
 
 function makeCvGateway(overrides: Partial<CvGateway> = {}): CvGateway {
@@ -31,7 +32,7 @@ function makeCvGateway(overrides: Partial<CvGateway> = {}): CvGateway {
     upload: () => EMPTY,
     delete: () => EMPTY,
     ...overrides,
-  } as unknown as CvGateway;
+  };
 }
 
 type SectionScrollerStub = {
