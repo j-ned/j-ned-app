@@ -31,8 +31,14 @@ import type { ProjectsService } from './projects.service';
 
 // La galerie n'a que des écritures admin : sa lecture passe par `GET /projects`.
 export function projectsRoutes(
-  projects: ProjectsService,
-  images: ProjectImagesService,
+  projects: Pick<
+    ProjectsService,
+    'findAll' | 'findById' | 'create' | 'update' | 'remove' | 'uploadImage'
+  >,
+  images: Pick<
+    ProjectImagesService,
+    'upload' | 'reorder' | 'updateAlt' | 'remove'
+  >,
   requireAuth: RequireAuth,
 ): Hono<AppEnv> {
   return (

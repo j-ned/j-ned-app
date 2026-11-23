@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/unbound-method */
 import { createHash } from 'node:crypto';
 import {
   NotFoundException,
@@ -7,10 +6,11 @@ import {
 import { SQL } from 'drizzle-orm';
 import { PgDialect } from 'drizzle-orm/pg-core';
 import type { UploadedFile } from '../common/http';
+import { asDatabase } from '../testing/mock-database';
 import { createMockDb } from '../testing/test-utils';
 import type { ProjectImage } from '../database/schema/project-images';
-import { StorageService } from '../storage/storage.service';
-import { ImageOptimizer } from '../storage/image-optimizer.service';
+import type { StorageService } from '../storage/storage.service';
+import type { ImageOptimizer } from '../storage/image-optimizer.service';
 import { ProjectImagesService } from './project-images.service';
 import { PROJECT_GALLERY_MAX } from './project-gallery';
 import { projects, type Project } from '../database/schema/projects';
@@ -34,8 +34,10 @@ const mkImage = (overrides: Partial<ProjectImage> = {}): ProjectImage => ({
 describe('ProjectImagesService', () => {
   let service: ProjectImagesService;
   let db: ReturnType<typeof createMockDb>;
-  let storage: jest.Mocked<StorageService>;
-  let optimizer: jest.Mocked<ImageOptimizer>;
+  let storage: jest.Mocked<
+    Pick<StorageService, 'upload' | 'delete' | 'getPublicUrl'>
+  >;
+  let optimizer: jest.Mocked<Pick<ImageOptimizer, 'optimize'>>;
 
   beforeEach(() => {
     db = createMockDb();
@@ -45,7 +47,7 @@ describe('ProjectImagesService', () => {
       getPublicUrl: jest.fn(
         (bucket: string, key: string) => `/storage/${bucket}/${key}`,
       ),
-    } as unknown as jest.Mocked<StorageService>;
+    };
     optimizer = {
       optimize: jest.fn().mockResolvedValue({
         buffer: Buffer.from('avif-bytes'),
@@ -54,9 +56,9 @@ describe('ProjectImagesService', () => {
         width: 1280,
         height: 800,
       }),
-    } as unknown as jest.Mocked<ImageOptimizer>;
+    };
 
-    service = new ProjectImagesService(db as never, storage, optimizer);
+    service = new ProjectImagesService(asDatabase(db), storage, optimizer);
   });
 
   describe('galleryOf', () => {

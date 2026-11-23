@@ -33,9 +33,15 @@ export class ProjectsService {
 
   constructor(
     private readonly db: Database,
-    private readonly storage: StorageService,
-    private readonly images: ImageOptimizer,
-    private readonly gallery: ProjectImagesService,
+    private readonly storage: Pick<
+      StorageService,
+      'upload' | 'delete' | 'getPublicUrl'
+    >,
+    private readonly images: Pick<ImageOptimizer, 'optimize'>,
+    private readonly gallery: Pick<
+      ProjectImagesService,
+      'galleryOf' | 'keysOf'
+    >,
   ) {}
 
   async findAll(): Promise<ProjectResponse[]> {
