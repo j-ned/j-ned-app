@@ -1,7 +1,7 @@
 import { HttpClient, HttpContext, HttpErrorResponse } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
 import { catchError, map, of, tap, type MonoTypeOperatorFunction, type Observable } from 'rxjs';
-import { ModerationError } from '../domain/moderation-error';
+import type { ModerationResult } from '../domain/moderation-result';
 import { silentErrors } from '@core/interceptors/skip-error-toast';
 import { OPTIONAL_UPSTREAM } from '@core/ssr/ssr-upstream-interceptor';
 import { API_BASE_URL } from '@shared/api/api-config';
@@ -15,7 +15,7 @@ import type {
   PublishedThread,
 } from '../domain/models/comment.model';
 import {
-  rejectAsModerationError,
+  rejectedOrOutage,
   toAcceptedId,
   toAdminComment,
   toAdminCommentPage,
@@ -26,6 +26,8 @@ import type { AdminCommentDto, AdminCommentPageDto, PublicCommentPageDto } from 
 
 // Plafond de l'API : au-delà, la section dit que seuls les premiers sont affichés.
 const THREAD_PAGE_SIZE = 100;
+
+const accepted = <T>(data: T): ModerationResult<T> => ({ success: true, data });
 
 @Injectable({ providedIn: 'root' })
 export class CommentsGateway {
@@ -83,33 +85,45 @@ export class CommentsGateway {
       .pipe(map(toAdminCommentPage));
   }
 
-  // Les écritures de l'admin : la page restaure son état et nomme l'échec elle-même.
-  publish(id: string): Observable<AdminComment> {
+  // Les écritures de l'admin : un refus est une réponse, seule une panne reste une erreur.
+  publish(id: string): Observable<ModerationResult<AdminComment>> {
     return this.http
       .patch<AdminCommentDto>(
         `${this.apiUrl}/blog/comments/${id}`,
         { status: 'published' },
         { context: silentErrors() },
       )
-      .pipe(map(toAdminComment), catchError(rejectAsModerationError), this.recountWhenSettled());
+      .pipe(
+        map((dto) => accepted(toAdminComment(dto))),
+        catchError((error: unknown) => rejectedOrOutage<AdminComment>(error)),
+        this.recountWhenSettled(),
+      );
   }
 
   // Refuser un commentaire, c'est le supprimer : ses réponses partent avec lui.
-  remove(id: string): Observable<void> {
+  remove(id: string): Observable<ModerationResult<void>> {
     return this.http
       .delete<void>(`${this.apiUrl}/blog/comments/${id}`, { context: silentErrors() })
-      .pipe(catchError(rejectAsModerationError), this.recountWhenSettled());
+      .pipe(
+        map(() => accepted(undefined)),
+        catchError((error: unknown) => rejectedOrOutage<void>(error)),
+        this.recountWhenSettled(),
+      );
   }
 
   // Réponse du propriétaire : publiée d'emblée par l'API.
-  reply(id: string, body: string): Observable<AdminComment> {
+  reply(id: string, body: string): Observable<ModerationResult<AdminComment>> {
     return this.http
       .post<AdminCommentDto>(
         `${this.apiUrl}/blog/comments/${id}/replies`,
         { body },
         { context: silentErrors() },
       )
-      .pipe(map(toAdminComment), catchError(rejectAsModerationError), this.recountWhenStale());
+      .pipe(
+        map((dto) => accepted(toAdminComment(dto))),
+        catchError((error: unknown) => rejectedOrOutage<AdminComment>(error)),
+        this.recountWhenStale(),
+      );
   }
 
   getPendingCount(): Observable<number> {
@@ -120,23 +134,14 @@ export class CommentsGateway {
     this.pendingCount.refresh();
   }
 
-  // Publier ou supprimer change la file en attente.
-  private recountWhenSettled<T>(): MonoTypeOperatorFunction<T> {
-    return (source) =>
-      source.pipe(
-        tap(() => this.invalidatePendingCount()),
-        this.recountWhenStale(),
-      );
+  // Publier ou supprimer change la file en attente ; un refus dit qu'elle a changé ailleurs.
+  private recountWhenSettled<T>(): MonoTypeOperatorFunction<ModerationResult<T>> {
+    return tap(() => this.invalidatePendingCount());
   }
 
-  // Un refus 404 ou 409 dit que la file a changé ailleurs.
-  private recountWhenStale<T>(): MonoTypeOperatorFunction<T> {
-    return tap({
-      error: (error: unknown) => {
-        if (error instanceof ModerationError && error.reason !== 'failed') {
-          this.invalidatePendingCount();
-        }
-      },
+  private recountWhenStale<T>(): MonoTypeOperatorFunction<ModerationResult<T>> {
+    return tap((result) => {
+      if (!result.success) this.invalidatePendingCount();
     });
   }
 

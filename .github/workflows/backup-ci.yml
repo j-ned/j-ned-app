@@ -1,6 +1,6 @@
 name: Backup CI
 
-# Image de sauvegarde de la base (`deploy/backup`, ADR-0038) : construite, puis jugée de bout en bout
+# Image de sauvegarde de la base (`deploy/backup`) : construite, puis jugée de bout en bout
 # devant un Postgres et un stockage S3 jetables (sauvegarde chiffrée, restauration identique, refus
 # d'une mauvaise phrase). Sur master, l'image jugée est publiée sur GHCR.
 on:
@@ -18,10 +18,13 @@ on:
 permissions:
   contents: read
 
-# Un run par branche/PR : le nouveau push annule le précédent.
+# Un run par branche/PR. Sur une PR, le nouveau push annule le précédent. Sur master, le run en cours
+# va au bout : son image `sha-<commit>` est une cible de retour arrière, et les runs restent dans
+# l'ordre des fusions pour que `latest` ne recule pas. GitHub ne garde qu'un run en attente par
+# groupe : lors d'une rafale de trois fusions, celle du milieu n'est pas construite.
 concurrency:
   group: backup-ci-${{ github.ref }}
-  cancel-in-progress: true
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
   image:

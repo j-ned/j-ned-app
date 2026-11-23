@@ -8,12 +8,12 @@ import {
   viewChildren,
 } from '@angular/core';
 import { takeUntilDestroyed } from '@angular/core/rxjs-interop';
-import { EMPTY, catchError, throwError, type Observable, type OperatorFunction } from 'rxjs';
+import { EMPTY, mergeMap, of, type Observable, type OperatorFunction } from 'rxjs';
 import type { AdminComment } from '@features/comments/domain/models/comment.model';
-import {
-  ModerationError,
-  type ModerationFailure,
-} from '@features/comments/domain/moderation-error';
+import type {
+  ModerationFailure,
+  ModerationResult,
+} from '@features/comments/domain/moderation-result';
 import { CommentsGateway } from '@features/comments/infra/comments.gateway';
 import { refreshAdminWhenVisible } from '../../application/refresh-admin-when-visible';
 import { ToastStore } from '@core/notifications/toast-store';
@@ -35,9 +35,6 @@ import { AdminPageHeader } from '../../application/components/admin-page-header'
 import { AdminPager } from '../../application/components/admin-pager';
 import { PendingDeletion } from '../../application/pending-deletion';
 import { CommentQueue } from './comment-queue';
-
-const moderationFailureOf = (error: unknown): ModerationFailure =>
-  error instanceof ModerationError ? error.reason : 'failed';
 
 @Component({
   selector: 'app-admin-comments',
@@ -196,22 +193,24 @@ export class AdminComments {
       .reply(comment.id, body)
       .pipe(takeUntilDestroyed(this.destroyRef))
       .subscribe({
-        next: (reply) => {
+        next: (result) => {
           this.replySending.set(false);
+          if (!result.success) {
+            this.tellFailure('reply', result.error, comment);
+            // Le formulaire qui a le focus disparaît avec la cible : le titre le reprend.
+            this.replyTarget.set(null);
+            this._pageHeader().focusTitle();
+            this.queue.refresh();
+            return;
+          }
           this.replyResetToken.update((token) => token + 1);
-          this.queue.addReply(comment, reply);
+          this.queue.addReply(comment, result.data);
           this.toast.add({ severity: 'success', detail: replyPublishedNotice(comment) });
           this.closeReply(comment);
         },
-        error: (error: unknown) => {
+        error: () => {
           this.replySending.set(false);
-          const reason = moderationFailureOf(error);
-          this.tellFailure('reply', reason, comment);
-          if (reason === 'failed') return;
-          // Le formulaire qui a le focus disparaît avec la cible : le titre le reprend.
-          this.replyTarget.set(null);
-          this._pageHeader().focusTitle();
-          this.queue.refresh();
+          this.tellFailure('reply', 'failed', comment);
         },
       });
   }
@@ -226,11 +225,10 @@ export class AdminComments {
   private settlingIfStale<T>(
     action: ModerationAction,
     comment: AdminComment,
-  ): OperatorFunction<T, T> {
-    return catchError((error: unknown) => {
-      const reason = moderationFailureOf(error);
-      if (reason === 'failed') return throwError(() => error);
-      this.tellFailure(action, reason, comment);
+  ): OperatorFunction<ModerationResult<T>, T> {
+    return mergeMap((result) => {
+      if (result.success) return of(result.data);
+      this.tellFailure(action, result.error, comment);
       this.queue.refresh();
       return EMPTY;
     });

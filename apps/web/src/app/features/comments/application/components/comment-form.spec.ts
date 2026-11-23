@@ -1,3 +1,4 @@
+import { describedError } from '@shared/testing/described-error';
 import { PLATFORM_ID } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -58,7 +59,7 @@ async function send(rendered: RenderedForm): Promise<void> {
 }
 
 const errorOf = (host: HTMLElement, field: Field): string | null =>
-  host.querySelector(`#comment-${field}-error`)?.textContent?.trim() ?? null;
+  describedError(host, `comment-${field}`)?.textContent?.trim() ?? null;
 
 describe('CommentForm', () => {
   beforeEach(() => TestBed.configureTestingModule({ providers: [provideRouter([])] }));

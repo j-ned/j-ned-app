@@ -1,5 +1,5 @@
 import { HttpErrorResponse } from '@angular/common/http';
-import { throwError, type Observable } from 'rxjs';
+import { of, throwError, type Observable } from 'rxjs';
 import type {
   AdminComment,
   AdminCommentPage,
@@ -9,7 +9,7 @@ import type {
   PublishedThread,
 } from '../domain/models/comment.model';
 import { isCommentId } from '../domain/comment-id';
-import { ModerationError, type ModerationFailure } from '../domain/moderation-error';
+import type { ModerationRejection, ModerationResult } from '../domain/moderation-result';
 import type {
   AdminCommentDto,
   AdminCommentPageDto,
@@ -87,11 +87,13 @@ export function toCommentRejection(status: number): CommentRejection {
   return REJECTIONS[status] ?? 'unavailable';
 }
 
-function moderationFailure(error: unknown): ModerationFailure {
-  if (!(error instanceof HttpErrorResponse)) return 'failed';
-  if (error.status === 404) return 'not-found';
-  return error.status === 409 ? 'conflict' : 'failed';
-}
+const MODERATION_REJECTIONS: Readonly<Record<number, ModerationRejection>> = {
+  404: 'not-found',
+  409: 'conflict',
+};
 
-export const rejectAsModerationError = (error: unknown): Observable<never> =>
-  throwError(() => new ModerationError(moderationFailure(error)));
+export function rejectedOrOutage<T>(error: unknown): Observable<ModerationResult<T>> {
+  const rejection =
+    error instanceof HttpErrorResponse ? MODERATION_REJECTIONS[error.status] : undefined;
+  return rejection ? of({ success: false, error: rejection }) : throwError(() => error);
+}

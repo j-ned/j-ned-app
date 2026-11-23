@@ -57,6 +57,7 @@ const PASSWORD_COMPLEXITY = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])/;
           <label for="current-pw" class="form-label">Mot de passe actuel</label>
           <input
             id="current-pw"
+            data-testid="password-current"
             type="password"
             [formField]="pwdForm.currentPassword"
             autocomplete="current-password"
@@ -78,6 +79,7 @@ const PASSWORD_COMPLEXITY = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])/;
           <label for="new-pw" class="form-label">Nouveau mot de passe</label>
           <input
             id="new-pw"
+            data-testid="password-new"
             type="password"
             [formField]="pwdForm.newPassword"
             autocomplete="new-password"
@@ -96,6 +98,7 @@ const PASSWORD_COMPLEXITY = /(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^a-zA-Z0-9])/;
           <label for="confirm-pw" class="form-label">Confirmer le mot de passe</label>
           <input
             id="confirm-pw"
+            data-testid="password-confirm"
             type="password"
             [formField]="pwdForm.confirmPassword"
             autocomplete="new-password"

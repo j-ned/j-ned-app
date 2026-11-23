@@ -71,6 +71,7 @@ const TOTP_PATTERN = /^\d{6}$/;
               <label for="totp-code" class="form-label">Code de vérification</label>
               <input
                 id="totp-code"
+                data-testid="twofa-setup-code"
                 type="text"
                 [formField]="tfaForm.code"
                 autocomplete="one-time-code"

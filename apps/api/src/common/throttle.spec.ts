@@ -1,6 +1,10 @@
-import { Hono } from 'hono';
+import { Hono, type MiddlewareHandler } from 'hono';
+import type { User } from '../database/schema';
 import { handleError } from './error-handler';
+import type { AppEnv } from './http';
+import { UnauthorizedException } from './http-errors';
 import {
+  ADMIN_READ_THROTTLE,
   ADMIN_WRITE_THROTTLE,
   AUTH_ATTEMPT_THROTTLE,
   CONTACT_THROTTLE,
@@ -12,6 +16,7 @@ import {
   quotaAddress,
   setThrottleStore,
   throttle,
+  throttleSession,
   type ThrottleConfig,
 } from './throttle';
 
@@ -35,7 +40,10 @@ function throttledApp(config: ThrottleConfig) {
   };
 }
 
-async function statuses(count: number, call: () => Promise<Response>) {
+async function statuses(
+  count: number,
+  call: () => Response | Promise<Response>,
+) {
   const result: number[] = [];
   for (let i = 0; i < count; i += 1) result.push((await call()).status);
   return result;
@@ -76,6 +84,7 @@ describe('throttle', () => {
   it('Given a broken counter store, When a request comes, Then it is let through rather than blocked', async () => {
     setThrottleStore({
       hit: () => Promise.reject(new Error('db down')),
+      release: () => Promise.reject(new Error('db down')),
       reset: () => Promise.resolve(),
     });
     try {
@@ -94,6 +103,7 @@ describe('throttle', () => {
     ['public reads', PUBLIC_READ_THROTTLE, 120, 60_000, 'allow'],
     ['login and 2FA attempts', AUTH_ATTEMPT_THROTTLE, 5, 60_000, 'reject'],
     ['admin gallery writes', ADMIN_WRITE_THROTTLE, 60, 60_000, 'allow'],
+    ['admin reads, per account', ADMIN_READ_THROTTLE, 60, 60_000, 'allow'],
     ['contact messages', CONTACT_THROTTLE, 3, 3_600_000, 'reject'],
     ['audience beacons', TRACK_THROTTLE, 10, 1_000, 'allow'],
   ])(
@@ -106,6 +116,173 @@ describe('throttle', () => {
       });
     },
   );
+});
+
+function account(id: string): User {
+  return {
+    id,
+    email: `${id}@example.com`,
+    passwordHash: 'hash',
+    isTwoFactorEnabled: false,
+    twoFactorSecret: null,
+    twoFactorBackupCodesHash: null,
+    tokenVersion: 0,
+    createdAt: new Date(0),
+    updatedAt: new Date(0),
+  };
+}
+
+const REVOKED = 'revoked';
+const BROKEN = 'broken';
+
+// Session simulée : l'en-tête `x-account` tient lieu de cookie valide, son absence d'un refus 401.
+function sessionApp() {
+  let now = 0;
+  let authRuns = 0;
+  const fakeAuth: MiddlewareHandler<AppEnv> = async (c, next) => {
+    authRuns += 1;
+    const id = c.req.header('x-account');
+    if (!id) throw new UnauthorizedException();
+    // Jeton bien signé dont le compte n'existe plus : refusé après une lecture en base.
+    if (id === BROKEN) throw new Error('users table unreachable');
+    if (id === REVOKED) {
+      await new Promise((resolve) => setImmediate(resolve));
+      throw new UnauthorizedException();
+    }
+    c.set('user', account(id));
+    await next();
+  };
+  const app = new Hono<AppEnv>()
+    .get(
+      '/admin',
+      throttleSession(
+        fakeAuth,
+        {
+          anonymous: { limit: 2, ttlMs: 60_000 },
+          account: { limit: 3, ttlMs: 60_000 },
+        },
+        () => now,
+      ),
+      (c) => c.text(c.var.user.id),
+    )
+    .onError(handleError);
+  const read = (ip: string, id?: string) =>
+    app.request('/admin', {
+      headers: { 'x-forwarded-for': ip, ...(id ? { 'x-account': id } : {}) },
+    });
+  return {
+    read,
+    authRuns: () => authRuns,
+    advance: (ms: number) => {
+      now += ms;
+    },
+  };
+}
+
+describe('throttleSession', () => {
+  it('Given a signed-in account, When it reads more often than the anonymous quota from one address, Then it is served up to its own account quota', async () => {
+    const { read } = sessionApp();
+
+    expect(await statuses(4, () => read('203.0.113.1', 'admin'))).toEqual([
+      200, 200, 200, 429,
+    ]);
+  });
+
+  it('Given an account, When it spreads its reads over several addresses, Then they share one quota', async () => {
+    const { read } = sessionApp();
+    await read('203.0.113.1', 'admin');
+    await read('203.0.113.2', 'admin');
+    await read('203.0.113.3', 'admin');
+
+    const blocked = await read('203.0.113.4', 'admin');
+    expect(blocked.status).toBe(429);
+    expect(blocked.headers.get('retry-after')).toBe('60');
+  });
+
+  it('Given two accounts on one address, When one exhausts its quota, Then the other keeps its own', async () => {
+    const { read } = sessionApp();
+    await statuses(4, () => read('203.0.113.1', 'first'));
+
+    expect((await read('203.0.113.1', 'second')).status).toBe(200);
+  });
+
+  it('Given an anonymous visitor, When it exceeds its refusals, Then it gets 429 without the session check running', async () => {
+    const { read, authRuns } = sessionApp();
+
+    expect(await statuses(2, () => read('203.0.113.1'))).toEqual([401, 401]);
+    const blocked = await read('203.0.113.1');
+    expect({
+      status: blocked.status,
+      retryAfter: blocked.headers.get('retry-after'),
+      authRuns: authRuns(),
+    }).toEqual({ status: 429, retryAfter: '60', authRuns: 2 });
+  });
+
+  it('Given a revoked session refused after a database read, When ten requests arrive at once, Then the session is checked no more often than the refusal quota', async () => {
+    const { read, authRuns } = sessionApp();
+
+    const responses = await Promise.all(
+      Array.from({ length: 10 }, async () => read('203.0.113.1', REVOKED)),
+    );
+
+    expect({
+      unauthorized: responses.filter((res) => res.status === 401).length,
+      throttled: responses.filter((res) => res.status === 429).length,
+      authRuns: authRuns(),
+    }).toEqual({ unauthorized: 2, throttled: 8, authRuns: 2 });
+  });
+
+  it('Given session checks that failed for a server fault, When an anonymous visitor then calls from the address, Then it still has its full refusal quota', async () => {
+    const { read } = sessionApp();
+    await statuses(3, () => read('203.0.113.1', BROKEN));
+
+    expect(await statuses(3, () => read('203.0.113.1'))).toEqual([
+      401, 401, 429,
+    ]);
+  });
+
+  it('Given an anonymous visitor throttled on one address, When an account reads from another, Then the account quota is untouched', async () => {
+    const { read } = sessionApp();
+    await statuses(5, () => read('203.0.113.1'));
+
+    expect(await statuses(3, () => read('203.0.113.2', 'admin'))).toEqual([
+      200, 200, 200,
+    ]);
+  });
+
+  it('Given signed-in reads from an address, When an anonymous visitor then calls from it, Then it still has its full refusal quota', async () => {
+    const { read } = sessionApp();
+    await statuses(3, () => read('203.0.113.1', 'admin'));
+
+    expect(await statuses(3, () => read('203.0.113.1'))).toEqual([
+      401, 401, 429,
+    ]);
+  });
+
+  it('Given an exhausted account, When the window has passed, Then it is served again', async () => {
+    const { read, advance } = sessionApp();
+    await statuses(4, () => read('203.0.113.1', 'admin'));
+    advance(60_000);
+
+    expect((await read('203.0.113.1', 'admin')).status).toBe(200);
+  });
+
+  it('Given a broken counter store, When reads come, Then they are let through rather than blocked', async () => {
+    setThrottleStore({
+      hit: () => Promise.reject(new Error('db down')),
+      release: () => Promise.reject(new Error('db down')),
+      reset: () => Promise.resolve(),
+    });
+    try {
+      const { read } = sessionApp();
+
+      expect(await statuses(5, () => read('203.0.113.9', 'admin'))).toEqual([
+        200, 200, 200, 200, 200,
+      ]);
+    } finally {
+      setThrottleStore(new MemoryThrottleStore());
+    }
+  });
 });
 
 describe('quota address', () => {
@@ -166,6 +343,35 @@ describe('quota address', () => {
       expect(await second(first, other)).toBe(status);
     },
   );
+});
+
+describe('MemoryThrottleStore, release', () => {
+  it('Given a counted key, When the hit is released within its window, Then the next hit counts as the first again', async () => {
+    const store = new MemoryThrottleStore();
+    const { resetAt } = await store.hit('route1|a', 60_000, 0);
+    await store.release('route1|a', resetAt);
+
+    expect(await store.hit('route1|a', 60_000, 10)).toEqual({
+      count: 1,
+      resetAt: 60_000,
+    });
+  });
+
+  it('Given a window that has rolled over, When a hit of the old window is released, Then the new window keeps its count', async () => {
+    const store = new MemoryThrottleStore();
+    const { resetAt } = await store.hit('route1|a', 60_000, 0);
+    await store.hit('route1|a', 60_000, 60_000);
+    await store.release('route1|a', resetAt);
+
+    expect((await store.hit('route1|a', 60_000, 60_010)).count).toBe(2);
+  });
+
+  it('Given an unknown key, When it is released, Then nothing is opened for it', async () => {
+    const store = new MemoryThrottleStore();
+    await store.release('route1|b', 60_000);
+
+    expect((await store.hit('route1|b', 60_000, 0)).count).toBe(1);
+  });
 });
 
 describe('MemoryThrottleStore, bounded', () => {

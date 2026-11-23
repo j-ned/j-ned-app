@@ -1,3 +1,4 @@
+import { describedError } from '@shared/testing/described-error';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { PasswordChangeForm, type PasswordChangeRequest } from './password-change-form';
@@ -11,16 +12,14 @@ function render(): ComponentFixture<PasswordChangeForm> {
 
 function input(
   fixture: ComponentFixture<PasswordChangeForm>,
-  controlName: string,
+  controlName: 'currentPassword' | 'newPassword' | 'confirmPassword',
 ): HTMLInputElement {
-  const ids = {
-    currentPassword: 'current-pw',
-    newPassword: 'new-pw',
-    confirmPassword: 'confirm-pw',
+  const testIds = {
+    currentPassword: 'password-current',
+    newPassword: 'password-new',
+    confirmPassword: 'password-confirm',
   };
-  return fixture.nativeElement.querySelector(
-    `input#${ids[controlName as keyof typeof ids]}`,
-  ) as HTMLInputElement;
+  return byTestId(fixture.nativeElement, testIds[controlName]) as HTMLInputElement;
 }
 
 describe('PasswordChangeForm: a11y attributes', () => {
@@ -41,7 +40,7 @@ describe('PasswordChangeForm: a11y attributes', () => {
     expect(el.getAttribute('aria-invalid')).toBe('true');
     expect(el.getAttribute('aria-describedby')).toBe('twofa-setup-current-pw-error');
 
-    const error = fixture.nativeElement.querySelector('#twofa-setup-current-pw-error');
+    const error = describedError(fixture.nativeElement, 'password-current');
     expect(error).not.toBeNull();
     expect(error!.getAttribute('role')).toBe('alert');
     expect(error!.textContent?.trim()).toBe('Champ obligatoire');
@@ -63,23 +62,23 @@ describe('PasswordChangeForm: validation messages', () => {
     fixture.componentInstance.pwdForm.newPassword().value.set('Aa1!');
     fixture.detectChanges();
 
-    const error = fixture.nativeElement.querySelector('#twofa-setup-new-pw-error');
+    const error = describedError(fixture.nativeElement, 'password-new');
     expect(error?.textContent).toContain('12');
     expect(error?.textContent).toContain('caractères');
   });
 
   it.each([
-    { field: 'currentPassword', errorId: 'twofa-setup-current-pw-error' },
-    { field: 'newPassword', errorId: 'twofa-setup-new-pw-error' },
+    { field: 'currentPassword', control: 'password-current' },
+    { field: 'newPassword', control: 'password-new' },
   ] as const)(
     'Given an 11-character $field When the field is touched Then the 12-character minimum is shown',
-    ({ field, errorId }) => {
+    ({ field, control }) => {
       const fixture = render();
       fixture.componentInstance.pwdForm[field]().value.set('Abcdefgh1!x');
       fixture.componentInstance.pwdForm[field]().markAsTouched();
       fixture.detectChanges();
 
-      const error = fixture.nativeElement.querySelector(`#${errorId}`);
+      const error = describedError(fixture.nativeElement, control);
       expect(error?.textContent?.trim()).toBe('Minimum 12 caractères requis');
     },
   );
@@ -90,7 +89,7 @@ describe('PasswordChangeForm: validation messages', () => {
     fixture.componentInstance.pwdForm.newPassword().value.set('aaaaaaaaaaaa');
     fixture.detectChanges();
 
-    const error = fixture.nativeElement.querySelector('#twofa-setup-new-pw-error');
+    const error = describedError(fixture.nativeElement, 'password-new');
     expect(error?.textContent).toContain(
       'Majuscule, minuscule, chiffre et caractère spécial requis',
     );
@@ -109,7 +108,7 @@ describe('PasswordChangeForm: validation messages', () => {
         .errors()
         .some((e) => e.kind === 'mismatch'),
     ).toBe(true);
-    const error = fixture.nativeElement.querySelector('#twofa-setup-confirm-pw-error');
+    const error = describedError(fixture.nativeElement, 'password-confirm');
     expect(error?.textContent).toContain('Les mots de passe ne correspondent pas');
   });
 });

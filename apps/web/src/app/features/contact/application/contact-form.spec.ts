@@ -1,3 +1,5 @@
+import { byTestId } from '@shared/testing/by-test-id';
+import { describedError } from '@shared/testing/described-error';
 import { PLATFORM_ID } from '@angular/core';
 import { TestBed, type ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -111,19 +113,19 @@ describe('ContactForm (Signal Forms)', () => {
     it('does not show an error before the field is touched, then shows it with aria wiring', async () => {
       const fixture = await setup();
       const email = fixture.componentInstance.contactForm.email;
-      const input = (): HTMLInputElement => fixture.nativeElement.querySelector('input#email');
+      const input = (): HTMLElement | null => byTestId(fixture.nativeElement, 'contact-email');
 
       expect(alerts(fixture)).toEqual([]);
-      expect(input().getAttribute('aria-invalid')).toBe('false');
+      expect(input()?.getAttribute('aria-invalid')).toBe('false');
 
       email().markAsTouched();
       await fixture.whenStable();
 
-      expect(input().getAttribute('aria-invalid')).toBe('true');
-      expect(input().getAttribute('aria-describedby')).toBe('contact-email-error');
-      expect(
-        fixture.nativeElement.querySelector('#contact-email-error')?.getAttribute('role'),
-      ).toBe('alert');
+      expect(input()?.getAttribute('aria-invalid')).toBe('true');
+      expect(input()?.getAttribute('aria-describedby')).toBe('contact-email-error');
+      expect(describedError(fixture.nativeElement, 'contact-email')?.getAttribute('role')).toBe(
+        'alert',
+      );
     });
 
     it('drops the aria-describedby once the field becomes valid', async () => {
@@ -131,9 +133,9 @@ describe('ContactForm (Signal Forms)', () => {
       fixture.componentInstance.contactForm.email().markAsTouched();
       await fill(fixture, makeContactData());
 
-      const input: HTMLInputElement = fixture.nativeElement.querySelector('input#email');
-      expect(input.getAttribute('aria-invalid')).toBe('false');
-      expect(input.getAttribute('aria-describedby')).toBeNull();
+      const input = byTestId(fixture.nativeElement, 'contact-email');
+      expect(input?.getAttribute('aria-invalid')).toBe('false');
+      expect(input?.getAttribute('aria-describedby')).toBeNull();
     });
   });
 
@@ -439,7 +441,7 @@ describe('ContactForm (Signal Forms)', () => {
         expect(submit).not.toHaveBeenCalled();
         expect(document.activeElement?.id).toBe('subject');
         expect(alerts(fixture)).toHaveLength(1);
-        expect(fixture.nativeElement.querySelector('#contact-subject-error')).not.toBeNull();
+        expect(describedError(fixture.nativeElement, 'contact-subject')).not.toBeNull();
       });
 
       it.each([
@@ -468,7 +470,7 @@ describe('ContactForm (Signal Forms)', () => {
         expect(submit).not.toHaveBeenCalled();
         expect(document.activeElement?.id).toBe('message');
         expect(alerts(fixture)).toHaveLength(1);
-        expect(fixture.nativeElement.querySelector('#contact-message-error')).not.toBeNull();
+        expect(describedError(fixture.nativeElement, 'contact-message')).not.toBeNull();
       });
     });
   });

@@ -269,6 +269,21 @@ describe('serializeError', () => {
     expect(line).toMatch(/\\n {4}at /);
   });
 
+  it.each<[string, unknown, Record<string, unknown>]>([
+    [
+      'une chaîne levée à la place d’une Error',
+      'échec\nparams: ada@example.test',
+      { message: 'échec\nparams: [Filtered]' },
+    ],
+    ['null', null, { message: 'null' }],
+    ['un nombre', 42, { message: '42' }],
+  ])(
+    'Given %s, Then elle est journalisée comme un message, paramètres masqués',
+    (_, thrown, expected) => {
+      expect(serializeError(thrown)).toEqual(expected);
+    },
+  );
+
   it('Given une erreur ordinaire, Then elle reste lisible', () => {
     const line = logLine({ err: new Error('S3 indisponible') });
 

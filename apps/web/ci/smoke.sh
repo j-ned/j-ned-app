@@ -54,7 +54,7 @@ grep -q "style-src-attr 'unsafe-hashes'" /tmp/about-csp.html
 for path in /projects/inexistant /blog/inexistant; do
   test "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:3000$path")" = "404" || { echo "pas de 404 : $path"; exit 1; }
 done
-# Offres et prise de rendez-vous retirées (spec 029) : 410 Gone, corps = shell client
+# Offres et prise de rendez-vous retirées : 410 Gone, corps = shell client
 for path in /offres /offres/site-vitrine /offre-site-industrie /rendez-vous /rendez-vous/ /rendez-vous/annulation; do
   test "$(curl -s -o /dev/null -w '%{http_code}' "http://127.0.0.1:3000$path")" = "410" || { echo "pas de 410 : $path"; exit 1; }
 done
@@ -131,7 +131,7 @@ grep -q ' 410' <<<"${cancel_headers%%$'\n'*}" || { echo "pas de 410 : annulation
 grep -qi '^strict-transport-security:' <<<"$cancel_headers"
 test "$(curl -s -o /tmp/404.html -w '%{http_code}' http://127.0.0.1:3000/does-not-exist)" = "404"
 grep -q '<app-root' /tmp/404.html && ! grep -q 'ng-state' /tmp/404.html
-# Anciennes URL d'offre, query comprise : 410 sans redirection (spec 029)
+# Anciennes URL d'offre, query comprise : 410 sans redirection
 for url in '/offre-site-industrie?utm_source=x' '/offres/application-metier?utm_source=x' '/offres/inexistant'; do
   gone=$(curl -s -D - -o /dev/null "http://127.0.0.1:3000$url")
   grep -q ' 410' <<<"${gone%%$'\n'*}" || { echo "pas de 410 : $url"; exit 1; }
@@ -151,7 +151,7 @@ done
 # Polices auto-hébergées servies avec le bon type (sinon rejetées par le navigateur)
 font=$(curl -fsS -D - -o /dev/null http://127.0.0.1:3000/fonts/bricolage-grotesque-1.001-latin-opsz48-wdth100-wght600-800.woff2)
 grep -qi 'content-type: font/woff2' <<<"$font" || { echo "police mal servie"; echo "$font"; exit 1; }
-# Polices : nom versionné, cache immuable (seule location ^/fonts/ depuis le retrait des démos)
+# Polices : nom versionné, cache immuable (location ^/fonts/)
 grep -qi 'cache-control: .*immutable' <<<"$font" || { echo "police sans cache immuable"; echo "$font"; exit 1; }
 # Cache immuable réservé aux URL empreintées : un fichier dont l'URL ne change pas avec le
 # contenu reste figé un an chez le visiteur (sprite d'icônes resté périmé après un ajout)

@@ -1,3 +1,4 @@
+import { describedError } from '@shared/testing/described-error';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 import { TwoFactorEnableForm } from './two-factor-enable-form';
@@ -21,7 +22,7 @@ function withQr(): ComponentFixture<TwoFactorEnableForm> {
 describe('TwoFactorEnableForm: initial state (no QR yet)', () => {
   it('does not render the code input before a QR code is provided', () => {
     const fixture = render();
-    const code = fixture.nativeElement.querySelector('input#totp-code');
+    const code = byTestId(fixture.nativeElement, 'twofa-setup-code');
     expect(code).toBeNull();
   });
 
@@ -61,7 +62,7 @@ describe('TwoFactorEnableForm: QR generated state', () => {
 
   it('code input has autocomplete=one-time-code, inputmode=numeric, aria-required=true', () => {
     const fixture = withQr();
-    const code = fixture.nativeElement.querySelector('input#totp-code') as HTMLInputElement;
+    const code = byTestId(fixture.nativeElement, 'twofa-setup-code') as HTMLInputElement;
     expect(code).not.toBeNull();
     expect(code.autocomplete).toBe('one-time-code');
     expect(code.inputMode).toBe('numeric');
@@ -74,11 +75,11 @@ describe('TwoFactorEnableForm: QR generated state', () => {
     fixture.componentInstance.tfaForm.code().value.set('');
     fixture.detectChanges();
 
-    const code = fixture.nativeElement.querySelector('input#totp-code') as HTMLInputElement;
+    const code = byTestId(fixture.nativeElement, 'twofa-setup-code') as HTMLInputElement;
     expect(code.getAttribute('aria-invalid')).toBe('true');
     expect(code.getAttribute('aria-describedby')).toBe('twofa-setup-code-error');
 
-    const error = fixture.nativeElement.querySelector('#twofa-setup-code-error');
+    const error = describedError(fixture.nativeElement, 'twofa-setup-code');
     expect(error).not.toBeNull();
     expect(error!.getAttribute('role')).toBe('alert');
     expect(error!.textContent?.trim()).toBe('Ce champ est obligatoire');
@@ -90,7 +91,7 @@ describe('TwoFactorEnableForm: QR generated state', () => {
     fixture.componentInstance.tfaForm.code().value.set('12');
     fixture.detectChanges();
 
-    const error = fixture.nativeElement.querySelector('#twofa-setup-code-error');
+    const error = describedError(fixture.nativeElement, 'twofa-setup-code');
     expect(error?.textContent).toContain('Le code doit contenir 6 chiffres');
   });
 });

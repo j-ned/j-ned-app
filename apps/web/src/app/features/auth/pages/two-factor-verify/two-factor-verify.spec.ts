@@ -1,3 +1,4 @@
+import { describedError } from '@shared/testing/described-error';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { TestBed, ComponentFixture } from '@angular/core/testing';
 import { provideRouter } from '@angular/router';
@@ -43,7 +44,7 @@ describe('TwoFactorVerify a11y', () => {
   });
 
   it('code input has autocomplete=one-time-code, inputmode=numeric, aria-required=true', () => {
-    const code = fixture.nativeElement.querySelector('input#code') as HTMLInputElement;
+    const code = byTestId(fixture.nativeElement, 'two-factor-code') as HTMLInputElement;
     expect(code.autocomplete).toBe('one-time-code');
     expect(code.inputMode).toBe('numeric');
     expect(code.getAttribute('aria-required')).toBe('true');
@@ -54,11 +55,11 @@ describe('TwoFactorVerify a11y', () => {
     fixture.componentInstance.form.code().value.set('');
     fixture.detectChanges();
 
-    const code = fixture.nativeElement.querySelector('input#code') as HTMLInputElement;
+    const code = byTestId(fixture.nativeElement, 'two-factor-code') as HTMLInputElement;
     expect(code.getAttribute('aria-invalid')).toBe('true');
     expect(code.getAttribute('aria-describedby')).toBe('twofa-code-error');
 
-    const errorMsg = fixture.nativeElement.querySelector('#twofa-code-error');
+    const errorMsg = describedError(fixture.nativeElement, 'two-factor-code');
     expect(errorMsg).not.toBeNull();
     expect(errorMsg!.getAttribute('role')).toBe('alert');
   });
@@ -107,8 +108,8 @@ describe('TwoFactorVerify: annonce d’un code refusé', () => {
     const fixture = TestBed.createComponent(TwoFactorVerify);
     await settle(fixture);
     const host = fixture.nativeElement as HTMLElement;
-    const input = host.querySelector<HTMLInputElement>('input#code');
-    if (input === null) throw new Error('input#code absent');
+    const input = byTestId(host, 'two-factor-code') as HTMLInputElement | null;
+    if (input === null) throw new Error('two-factor-code absent');
     input.value = '123456';
     input.dispatchEvent(new Event('input'));
     byTestId(host, 'two-factor-form')?.dispatchEvent(new Event('submit', { cancelable: true }));
