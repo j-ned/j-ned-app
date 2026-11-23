@@ -308,7 +308,7 @@ async function peekHits(
     return await store.peek(key, at);
   } catch (error: unknown) {
     logger.warn(
-      { err: error as Error },
+      { err: error },
       'Throttle store unavailable: request let through',
     );
     return undefined;
