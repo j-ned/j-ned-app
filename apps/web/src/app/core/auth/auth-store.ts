@@ -96,8 +96,8 @@ export class AuthStore {
     return this.gateway.generateTwoFactorSecret();
   }
 
-  enableTwoFactor(code: string): Observable<boolean> {
-    return this.gateway.enableTwoFactor(code).pipe(
+  enableTwoFactor(password: string, code: string): Observable<boolean> {
+    return this.gateway.enableTwoFactor(password, code).pipe(
       tap(() => {
         const user = this._currentUser();
         if (user) {

@@ -56,8 +56,12 @@ export class HttpAuthGateway extends AuthGateway {
     );
   }
 
-  enableTwoFactor(code: string): Observable<unknown> {
-    return this.http.post(`${this.apiUrl}/auth/2fa/enable`, { code }, { withCredentials: true });
+  enableTwoFactor(password: string, code: string): Observable<unknown> {
+    return this.http.post(
+      `${this.apiUrl}/auth/2fa/enable`,
+      { password, code },
+      { withCredentials: true },
+    );
   }
 
   disableTwoFactor(password: string): Observable<unknown> {

@@ -180,7 +180,7 @@ describe('authentication', () => {
 
       const enabled = await newVisitor().request('POST', '/api/auth/2fa/enable', {
         session,
-        json: { code: generateSync({ secret }) },
+        json: { password: parityEnv().adminPassword, code: generateSync({ secret }) },
       });
       backupCodes = (enabled.body as { backupCodes: string[] }).backupCodes;
 

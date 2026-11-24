@@ -148,6 +148,22 @@ describe('analytics-presenter', () => {
       expect(escapeCsv('a,b')).toBe('"a,b"');
       expect(escapeCsv('say "hi"')).toBe('"say ""hi"""');
     });
+
+    // Un libellé vient d'un visiteur anonyme (url, entityTitle) : un tableur évaluerait la formule.
+    it.each(['=1+2', '+HYPERLINK("http://example.invalid")', '-5', '@SUM(A1)', '\tx', '\r=1'])(
+      'neutralise une cellule qui commencerait une formule : %j',
+      (label) => {
+        expect(escapeCsv(label).replace(/^"/, '')).toMatch(/^'/);
+      },
+    );
+
+    it('entoure de guillemets une valeur contenant un retour chariot', () => {
+      expect(escapeCsv('a\rb')).toBe('"a\rb"');
+    });
+
+    it('garde lisible un chemin de page ordinaire', () => {
+      expect(escapeCsv('/blog/mon-article')).toBe('/blog/mon-article');
+    });
   });
 
   describe('buildAnalyticsCsv', () => {

@@ -15,7 +15,7 @@ describe('auth routes', () => {
     disableTwoFactor: jest.fn(),
     revokeSessionFromToken: notStubbed('revokeSessionFromToken'),
     generateTwoFactorSecret: notStubbed('generateTwoFactorSecret'),
-    enableTwoFactor: notStubbed('enableTwoFactor'),
+    enableTwoFactor: jest.fn(),
   };
   const journal = { findAll: jest.fn() };
   const build = (requireAuth: RequireAuth) =>
@@ -80,6 +80,33 @@ describe('auth routes', () => {
         'challenge-token',
         { code: '123456', backupCode: undefined },
         ORIGIN,
+      );
+    });
+  });
+
+  describe('activation de la 2FA', () => {
+    it('Given no password, When 2FA is enabled, Then it gets 400 and the service is not called', async () => {
+      const res = await post('2fa/enable', { code: '123456' });
+
+      expect(res.status).toBe(400);
+      expect(auth.enableTwoFactor).not.toHaveBeenCalled();
+    });
+
+    it('Given a password and a code, When 2FA is enabled, Then the service receives both', async () => {
+      auth.enableTwoFactor.mockResolvedValueOnce({
+        backupCodes: ['a1b2-c3d4'],
+      });
+
+      const res = await post('2fa/enable', {
+        password: 'a-long-password',
+        code: '123456',
+      });
+
+      expect(res.status).toBe(200);
+      expect(auth.enableTwoFactor).toHaveBeenCalledWith(
+        expect.objectContaining({}),
+        'a-long-password',
+        '123456',
       );
     });
   });

@@ -1,6 +1,6 @@
 import * as Sentry from '@sentry/node';
 import pino, { type LoggerOptions } from 'pino';
-import { createRootLogger } from './logger';
+import { createRootLogger, Logger, setRootLogger } from './logger';
 
 jest.mock('@sentry/node', () => ({ captureMessage: jest.fn() }));
 // Le vrai pino, mais sans écrire sur stdout ni démarrer le worker de `pino-pretty`.
@@ -75,6 +75,46 @@ describe('createRootLogger', () => {
       logger().warn('attention');
 
       expect(Sentry.captureMessage).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('Logger.error(message, stack)', () => {
+    afterEach(() => setRootLogger(pino({ level: 'silent' })));
+
+    // Pile d'une DrizzleQueryError : son message recopie les valeurs liées de la requête.
+    const queryErrorStack = [
+      'Error: Failed query: select "id" from "page_view" where "page_view"."url" = $1',
+      'params: /blog/visiteur?email=visiteur@example.test,1',
+      '    at DrizzleQueryError (/app/node_modules/drizzle-orm/errors.js:1:1)',
+    ].join('\n');
+
+    it('Given la pile d’une requête en échec, When elle est journalisée, Then ses valeurs liées ne partent pas à Sentry', () => {
+      setRootLogger(createRootLogger({ level: 'info', pretty: false }));
+
+      new Logger('Tracker').error('track failed', queryErrorStack);
+
+      const sent = JSON.stringify(
+        jest.mocked(Sentry.captureMessage).mock.calls,
+      );
+      expect(sent).not.toContain('visiteur@example.test');
+      expect(sent).toContain('params: [Filtered]');
+      expect(sent).toContain('at DrizzleQueryError');
+    });
+
+    it('Given la pile d’une requête en échec, When elle est journalisée, Then la ligne pino ne contient pas ses valeurs liées', () => {
+      const lines: string[] = [];
+      const actual = jest.requireActual<typeof import('pino')>('pino');
+      setRootLogger(
+        actual.pino(
+          { level: 'info' },
+          { write: (line: string) => lines.push(line) },
+        ),
+      );
+
+      new Logger('Tracker').error('track failed', queryErrorStack);
+
+      expect(lines.join('')).not.toContain('visiteur@example.test');
+      expect(lines.join('')).toContain('at DrizzleQueryError');
     });
   });
 });

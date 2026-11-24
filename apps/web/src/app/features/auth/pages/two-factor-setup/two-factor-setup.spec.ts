@@ -13,7 +13,7 @@ type AuthStoreMock = {
   currentUser: ReturnType<typeof signal<{ isTwoFactorEnabled: boolean } | null>>;
   changePassword: (current: string, next: string) => Observable<boolean>;
   generateTwoFactorSecret: () => Observable<TwoFactorSecretResponse>;
-  enableTwoFactor: (code: string) => Observable<boolean>;
+  enableTwoFactor: (password: string, code: string) => Observable<boolean>;
   disableTwoFactor: (password: string) => Observable<boolean>;
 };
 
@@ -167,7 +167,7 @@ describe('TwoFactorSetup: 2FA enable orchestration', () => {
     expect(enableChild(fixture)!.secret()).toBe('TOTPSECRET');
   });
 
-  it('calls AuthStore.enableTwoFactor with the code when the child emits verify', async () => {
+  it('calls AuthStore.enableTwoFactor with the password and the code when the child emits verify', async () => {
     const store = makeAuthStore();
     const spy = vi.spyOn(store, 'enableTwoFactor');
     const fixture = await setup(store);
@@ -176,10 +176,10 @@ describe('TwoFactorSetup: 2FA enable orchestration', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    enableChild(fixture)!.verify.emit('123456');
+    enableChild(fixture)!.verify.emit({ password: 'a-long-password', code: '123456' });
     fixture.detectChanges();
 
-    expect(spy).toHaveBeenCalledWith('123456');
+    expect(spy).toHaveBeenCalledWith('a-long-password', '123456');
   });
 
   it('pushes a success message to the enable child after a successful verification', async () => {
@@ -190,7 +190,7 @@ describe('TwoFactorSetup: 2FA enable orchestration', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    enableChild(fixture)!.verify.emit('123456');
+    enableChild(fixture)!.verify.emit({ password: 'a-long-password', code: '123456' });
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -205,7 +205,7 @@ describe('TwoFactorSetup: 2FA enable orchestration', () => {
     fixture.detectChanges();
     await fixture.whenStable();
 
-    enableChild(fixture)!.verify.emit('000000');
+    enableChild(fixture)!.verify.emit({ password: 'a-long-password', code: '000000' });
     fixture.detectChanges();
     await fixture.whenStable();
 
@@ -319,7 +319,7 @@ describe('TwoFactorSetup: one request at a time', () => {
       command: 'enableTwoFactor' as const,
       twoFactorEnabled: false,
       fire: (fixture: ComponentFixture<TwoFactorSetup>): void =>
-        enableChild(fixture)?.verify.emit('123456'),
+        enableChild(fixture)?.verify.emit({ password: 'a-long-password', code: '123456' }),
     },
     {
       action: 'a deactivation',

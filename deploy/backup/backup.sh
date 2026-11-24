@@ -27,11 +27,19 @@ $BACKUP_PASSPHRASE
 EOF
 }
 
+# `gpg --decrypt` sort aussi en succès sur un message OpenPGP non chiffré (`gpg --store`), sans lire la
+# phrase : seule la ligne d'état DECRYPTION_OKAY prouve un déchiffrement par la phrase (GNUPGHOME vide,
+# aucune clé secrète). Sans elle, quiconque écrit dans le bucket ferait restaurer son propre dump.
 decrypt() {
-  gpg --batch --quiet --decrypt --pinentry-mode loopback \
+  gpg --batch --quiet --decrypt --pinentry-mode loopback --status-file "$WORK/gpg-status" \
     --passphrase-fd 3 --output "$2" "$1" 3<<EOF
 $BACKUP_PASSPHRASE
 EOF
+  if ! grep -q '^\[GNUPG:\] DECRYPTION_OKAY' "$WORK/gpg-status"; then
+    rm -f "$2"
+    echo "$(date -u +%FT%TZ) objet refusé : il n'est pas chiffré par la phrase de sauvegarde" >&2
+    return 1
+  fi
 }
 
 # Requête S3 signée (AWS v4) par curl : `s3 <fichier de réponse> <arguments de curl>`. Les clés passent
@@ -73,7 +81,19 @@ restore() {
   s3 "$WORK/restore.gpg" "$BACKUP_S3_ENDPOINT/$BACKUP_S3_BUCKET/$object"
   decrypt "$WORK/restore.gpg" "$WORK/restore.dump"
   pg_restore --no-owner --no-privileges --exit-on-error --dbname "$PGDATABASE" "$WORK/restore.dump"
-  echo "$(date -u +%FT%TZ) restauration terminée : $object dans $PGDATABASE"
+  # La révocation d'une session n'est qu'un compteur dans `users` : restaurer un instantané antérieur
+  # à une déconnexion ou à un changement de mot de passe ranimerait les jetons révoqués depuis. Le
+  # porter au-delà de toute valeur déjà émise invalide toutes les sessions, anciennes comme récentes.
+  psql --no-psqlrc --quiet -v ON_ERROR_STOP=1 --dbname "$PGDATABASE" <<'SQL'
+DO $$
+BEGIN
+  IF to_regclass('public.users') IS NOT NULL THEN
+    UPDATE users SET token_version = token_version + 1000000;
+  END IF;
+END
+$$;
+SQL
+  echo "$(date -u +%FT%TZ) restauration terminée : $object dans $PGDATABASE (sessions révoquées)"
 }
 
 seconds_until_next_run() {

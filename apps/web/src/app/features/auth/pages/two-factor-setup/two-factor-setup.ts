@@ -12,7 +12,10 @@ import {
   PasswordChangeForm,
   type PasswordChangeRequest,
 } from '../../application/password-change-form';
-import { TwoFactorEnableForm } from '../../application/two-factor-enable-form';
+import {
+  TwoFactorEnableForm,
+  type TwoFactorEnableRequest,
+} from '../../application/two-factor-enable-form';
 import { TwoFactorDisableForm } from '../../application/two-factor-disable-form';
 
 @Component({
@@ -122,17 +125,17 @@ export class TwoFactorSetup {
     }
   }
 
-  async enable(code: string): Promise<void> {
+  async enable(request: TwoFactorEnableRequest): Promise<void> {
     if (this.isTfaLoading()) return;
     const done = this.startTfaCommand();
     try {
-      if (await firstValueFrom(this.authService.enableTwoFactor(code))) {
+      if (await firstValueFrom(this.authService.enableTwoFactor(request.password, request.code))) {
         this.tfaSuccess.set('Authentification à deux facteurs activée avec succès !');
         this.qrCodeUrl.set('');
         this.secret.set('');
         this.tfaResetToken.update((token) => token + 1);
       } else {
-        this.tfaError.set('Code invalide. Réessaie.');
+        this.tfaError.set('Mot de passe ou code invalide. Réessaie.');
       }
     } catch {
       this.tfaError.set("Erreur lors de l'activation");

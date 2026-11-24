@@ -8,7 +8,7 @@ import {
 import { Logger } from '../common/logger';
 import type { PaginatedResult, PaginationParams } from '../common/pagination';
 import type { BlogComment, CommentStatus } from '../database/schema';
-import { quotaAddress } from '../common/throttle';
+import { networkQuotaAddress, quotaAddress } from '../common/throttle';
 import { fireAndForget } from '../common/utils';
 import {
   COMMENT_NOTIFICATION_TEMPLATE,
@@ -17,7 +17,11 @@ import {
 import type { MailSender } from '../mailer/mail-transport';
 import { maskEmail } from '../mailer/mailer.utils';
 import { toAdminComment, type AdminComment } from './admin-comment';
-import { PENDING_PER_SENDER, PENDING_TOTAL } from './comment-limits';
+import {
+  PENDING_PER_NETWORK,
+  PENDING_PER_SENDER,
+  PENDING_TOTAL,
+} from './comment-limits';
 import { toCommentRecord, type CommentRecord } from './comment-record';
 import type { CommentStore, PostRef } from './comment-store';
 import type { CreateCommentDto } from './dto/create-comment.dto';
@@ -76,9 +80,14 @@ export class BlogCommentsService {
         email: dto.email,
         // Même découpage que le quota : un /64 IPv6 ou une IPv4 (forme mappée comprise) = un expéditeur.
         senderHash: this.hashSender(quotaAddress(sender.ip)),
+        senderNetworkHash: this.hashSender(networkQuotaAddress(sender.ip)),
         body: dto.body,
       },
-      { perSender: PENDING_PER_SENDER, total: PENDING_TOTAL },
+      {
+        perSender: PENDING_PER_SENDER,
+        perNetwork: PENDING_PER_NETWORK,
+        total: PENDING_TOTAL,
+      },
     );
     switch (result.kind) {
       case 'target-gone':

@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Juge l'image de sauvegarde de bout en bout, devant un Postgres et un stockage S3 (MinIO) jetables :
 # une base témoin est sauvegardée, l'objet envoyé est chiffré, puis restauré dans une base vide dont
-# le contenu doit être identique. Une mauvaise phrase ne restaure rien. Même script en CI et en local,
+# le contenu doit être identique et les sessions révoquées. Une mauvaise phrase ou un objet non
+# chiffré ne restaurent rien. Même script en CI et en local,
 # après `docker build -t j-ned-app-backup:ci deploy/backup`.
 #   deploy/backup/check.sh [image]
 set -euo pipefail
@@ -48,8 +49,11 @@ psql_db -d source <<'SQL' >/dev/null
 create table article (id int primary key, title text not null);
 insert into article select n, 'Article témoin ' || n from generate_series(1, 500) as n;
 create index article_title on article (title);
+create table users (id int primary key, token_version int not null default 0);
+insert into users values (1, 3);
 SQL
-psql_db -d postgres -c 'create database restored' -c 'create database refused' >/dev/null
+psql_db -d postgres -c 'create database restored' -c 'create database refused' \
+  -c 'create database forged' >/dev/null
 
 # Variables de `RUN_ENV` posées après les autres : elles les remplacent, le temps d'un cas d'erreur.
 RUN_ENV=()
@@ -100,6 +104,31 @@ test "$(psql_db -d restored -c "select count(*) from pg_indexes where indexname 
   echo "index non restauré" >&2
   exit 1
 }
+# Une session révoquée après la sauvegarde ne doit pas revivre : la restauration porte le compteur
+# de révocation au-delà de toute valeur déjà émise.
+test "$(psql_db -d restored -c 'select token_version from users where id = 1')" = "1000003" || {
+  echo "sessions non révoquées après la restauration" >&2
+  exit 1
+}
+
+# Un message OpenPGP non chiffré (`gpg --store`) se « déchiffre » sans la phrase : déposé dans le
+# bucket par qui en a l'accès en écriture, il ne doit pas être restauré.
+forged=forged.dump.gpg
+# Le contenu est un vrai dump : seul le chiffrement manquant doit le faire refuser.
+docker exec "$DB" pg_dump --format=custom -U postgres source |
+  docker run --rm -i --network "$NETWORK" -e GNUPGHOME=/tmp/g --entrypoint sh "$IMAGE" -c \
+    'mkdir -m 700 /tmp/g && gpg --batch --quiet --store --output /tmp/f &&
+     curl --fail --silent --show-error --aws-sigv4 aws:amz:auto:s3 --user backup-check:backup-check-secret \
+       -H "x-amz-content-sha256: UNSIGNED-PAYLOAD" --upload-file /tmp/f "$0"' \
+    "http://$S3:9000/$BUCKET/$forged" >/dev/null
+if run forged 'phrase de test' restore "$forged" >/dev/null 2>&1; then
+  echo "restauration acceptée pour un objet non chiffré" >&2
+  exit 1
+fi
+test "$(psql_db -d forged -c "select count(*) from pg_tables where tablename = 'article'")" = "0" || {
+  echo "base modifiée par un objet non chiffré" >&2
+  exit 1
+}
 
 if run refused 'mauvaise phrase' restore "$object" >/dev/null 2>&1; then
   echo "restauration acceptée avec une mauvaise phrase" >&2
@@ -110,4 +139,4 @@ test "$(psql_db -d refused -c "select count(*) from pg_tables where tablename = 
   exit 1
 }
 
-echo "Image $IMAGE : sauvegarde chiffrée, restauration identique et refus d'une mauvaise phrase vérifiés."
+echo "Image $IMAGE : sauvegarde chiffrée, restauration identique avec sessions révoquées, refus d'une mauvaise phrase et d'un objet non chiffré vérifiés."

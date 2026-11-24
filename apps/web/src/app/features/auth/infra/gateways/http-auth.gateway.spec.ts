@@ -138,14 +138,14 @@ describe('HttpAuthGateway', () => {
     httpController.verify();
   });
 
-  it('enableTwoFactor(code) émet POST /<base>/auth/2fa/enable + withCredentials', async () => {
+  it('enableTwoFactor(password, code) émet POST /<base>/auth/2fa/enable + withCredentials', async () => {
     const { gateway, httpController } = configure();
 
-    const promise = firstValueFrom(gateway.enableTwoFactor('123456'));
+    const promise = firstValueFrom(gateway.enableTwoFactor('a-long-password', '123456'));
 
     const req = httpController.expectOne(`${BASE}/auth/2fa/enable`);
     expect(req.request.method).toBe('POST');
-    expect(req.request.body).toEqual({ code: '123456' });
+    expect(req.request.body).toEqual({ password: 'a-long-password', code: '123456' });
     expect(req.request.withCredentials).toBe(true);
     req.flush({ ok: true });
 

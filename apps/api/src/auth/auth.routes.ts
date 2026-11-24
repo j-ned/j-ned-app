@@ -141,10 +141,12 @@ export function authRoutes({
         c.json(await auth.generateTwoFactorSecret(c.var.user)),
       )
 
-      // Active la 2FA sur un code valide ; rend les 10 codes de secours à usage unique.
+      // Active la 2FA sur le mot de passe et un code valide ; rend les 10 codes de secours à usage unique.
       .post('/2fa/enable', throttle(), requireAuth, async (c) => {
         const dto = await jsonBody(c, twoFactorEnableSchema);
-        return c.json(await auth.enableTwoFactor(c.var.user, dto.code));
+        return c.json(
+          await auth.enableTwoFactor(c.var.user, dto.password, dto.code),
+        );
       })
 
       .post('/2fa/disable', throttle(), requireAuth, async (c) => {

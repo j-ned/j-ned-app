@@ -288,7 +288,7 @@ function constraintOf(error: unknown): string {
   });
 
   describe('pending caps under concurrency', () => {
-    const CAPS = { perSender: 3, total: 100 };
+    const CAPS = { perSender: 3, perNetwork: 10, total: 100 };
     const pendingFrom = (postId: string, senderHash: string) =>
       store.insertPending(
         {
@@ -297,6 +297,7 @@ function constraintOf(error: unknown): string {
           name: 'Camille',
           email: 'camille@example.test',
           senderHash,
+          senderNetworkHash: senderHash,
           body: 'Un commentaire',
         },
         CAPS,
@@ -348,6 +349,7 @@ function constraintOf(error: unknown): string {
           name: 'Camille',
           email: 'camille@example.test',
           senderHash: 'd'.repeat(64),
+          senderNetworkHash: 'd'.repeat(64),
           body: 'Une réponse',
         },
         CAPS,

@@ -181,6 +181,19 @@ export function quotaAddress(ip: string): string {
   return `${prefix.join(':')}::/64`;
 }
 
+// Repli d'une portée saturée : une allocation entière (IPv4 /24, IPv6 /48) partage un compteur, ce qui
+// coûte à un flot venu d'un même réseau sans fermer la route aux autres réseaux.
+export function networkQuotaAddress(ip: string): string {
+  const address = quotaAddress(ip);
+  if (isIP(address) === 4) {
+    return `${address.split('.').slice(0, 3).join('.')}.0/24`;
+  }
+  if (address.endsWith('::/64')) {
+    return `${address.split(':').slice(0, 3).join(':')}::/48`;
+  }
+  return address;
+}
+
 function ipv6Groups(part: string): number[] {
   if (part === '') return [];
   return part.split(':').flatMap((group) => {
@@ -239,11 +252,15 @@ export function throttle(
   const route = nextRoute();
   return async (c, next) => {
     const at = now();
-    const hit = await countHit(
-      `${route}|${quotaAddress(clientIp(c))}`,
-      config.ttlMs,
-      at,
-    );
+    const ip = clientIp(c);
+    let hit = await countHit(`${route}|${quotaAddress(ip)}`, config.ttlMs, at);
+    if (hit?.saturated && config.whenFull !== 'allow') {
+      hit = await countHit(
+        `${route}:network|${networkQuotaAddress(ip)}`,
+        config.ttlMs,
+        at,
+      );
+    }
     rejectOverLimit(c, hit, config, at);
     await next();
   };

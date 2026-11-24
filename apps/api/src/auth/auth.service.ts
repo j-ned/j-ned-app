@@ -243,10 +243,18 @@ export class AuthService {
     return { secret, qrCodeDataUrl };
   }
 
+  // Mot de passe exigé, comme pour désactiver : une session volée ne lie pas son propre authentificateur
+  // et ne remplace pas les codes de secours du propriétaire.
   async enableTwoFactor(
     user: User,
+    password: string,
     code: string,
   ): Promise<{ backupCodes: string[] }> {
+    if (user.isTwoFactorEnabled) {
+      throw new BadRequestException('2FA is already enabled');
+    }
+    const ok = await this.verifyCurrentPassword(user, password);
+    if (!ok) throw new UnauthorizedException('Invalid password');
     if (!user.twoFactorSecret) {
       throw new BadRequestException(
         'Generate a 2FA secret first via /auth/2fa/generate',

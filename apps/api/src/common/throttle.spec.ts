@@ -457,7 +457,7 @@ describe('MemoryThrottleStore, bounded', () => {
 });
 
 describe('throttle, counter store full', () => {
-  const full = async (config: ThrottleConfig) => {
+  const fullStore = (config: ThrottleConfig) => {
     setThrottleStore(new MemoryThrottleStore(1));
     let now = 0;
     const app = new Hono()
@@ -467,25 +467,76 @@ describe('throttle, counter store full', () => {
         (c) => c.text('ok'),
       )
       .onError(handleError);
-    const hit = (ip: string) =>
-      app.request('/x', { headers: { 'x-forwarded-for': ip } });
-    await hit('203.0.113.1');
-    now = 15_000;
-    return hit('203.0.113.2');
+    return {
+      hit: (ip: string) =>
+        app.request('/x', { headers: { 'x-forwarded-for': ip } }),
+      at: (ms: number) => {
+        now = ms;
+      },
+    };
   };
+  const LOGIN_GRADE: ThrottleConfig = { limit: 2, ttlMs: 60_000 };
 
   afterEach(() => setThrottleStore(new MemoryThrottleStore()));
 
-  it('Given a login-grade quota, When the store is full of live counters, Then a new visitor gets 429 until a counter expires', async () => {
-    const res = await full({ limit: 5, ttlMs: 60_000 });
+  // Une seule allocation (un /48 IPv6 contient 65 536 /64) remplirait la portée et fermerait la route
+  // à tous : un nouveau visiteur est alors compté sous un préfixe plus large, son réseau.
+  it('Given a login-grade quota and a store full of one network, When a visitor from another network comes, Then it is served', async () => {
+    const { hit, at } = fullStore(LOGIN_GRADE);
+    await hit('203.0.113.1');
+    at(15_000);
+
+    const res = await hit('198.51.100.7');
+
+    expect(res.status).toBe(200);
+  });
+
+  it('Given a login-grade quota and a full store, When the filling network keeps sending new addresses, Then its whole /24 shares one quota', async () => {
+    const { hit, at } = fullStore(LOGIN_GRADE);
+    await hit('203.0.113.1');
+    at(15_000);
+
+    const result: number[] = [];
+    for (const ip of ['203.0.113.2', '203.0.113.3', '203.0.113.4']) {
+      result.push((await hit(ip)).status);
+    }
+
+    expect(result).toEqual([200, 200, 429]);
+  });
+
+  it('Given a login-grade quota, When both the store and the wider store are full, Then a new visitor gets 429 until a counter expires', async () => {
+    const { hit, at } = fullStore(LOGIN_GRADE);
+    await hit('203.0.113.1');
+    await hit('203.0.113.2');
+    at(15_000);
+
+    const res = await hit('198.51.100.7');
 
     expect(res.status).toBe(429);
     expect(res.headers.get('retry-after')).toBe('45');
   });
 
-  it('Given a quota declared open when full, When the store is full of live counters, Then a new visitor is served uncounted', async () => {
-    const res = await full({ limit: 5, ttlMs: 60_000, whenFull: 'allow' });
+  it('Given an IPv6 network filling the store, When another /64 of the same /48 comes, Then it shares the /48 quota', async () => {
+    const { hit } = fullStore({ limit: 1, ttlMs: 60_000 });
+    await hit('2001:db8:1:1::1');
 
-    expect(res.status).toBe(200);
+    const statusesOfSameAllocation = [
+      (await hit('2001:db8:1:2::1')).status,
+      (await hit('2001:db8:1:3::1')).status,
+    ];
+
+    expect(statusesOfSameAllocation).toEqual([200, 429]);
+  });
+
+  it('Given a quota declared open when full, When the store is full of live counters, Then a new visitor is served uncounted', async () => {
+    const { hit, at } = fullStore({
+      limit: 5,
+      ttlMs: 60_000,
+      whenFull: 'allow',
+    });
+    await hit('203.0.113.1');
+    at(15_000);
+
+    expect((await hit('203.0.113.2')).status).toBe(200);
   });
 });

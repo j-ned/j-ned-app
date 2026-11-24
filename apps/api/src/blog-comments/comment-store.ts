@@ -37,6 +37,7 @@ export type NewVisitorComment = {
   readonly name: string;
   readonly email: string;
   readonly senderHash: string;
+  readonly senderNetworkHash: string;
   readonly body: string;
 };
 
@@ -49,6 +50,7 @@ export type NewOwnerReply = {
 
 export type PendingCaps = {
   readonly perSender: number;
+  readonly perNetwork: number;
   readonly total: number;
 };
 
