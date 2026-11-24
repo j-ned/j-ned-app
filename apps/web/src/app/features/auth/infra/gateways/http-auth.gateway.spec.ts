@@ -147,9 +147,9 @@ describe('HttpAuthGateway', () => {
     expect(req.request.method).toBe('POST');
     expect(req.request.body).toEqual({ password: 'a-long-password', code: '123456' });
     expect(req.request.withCredentials).toBe(true);
-    req.flush({ ok: true });
+    req.flush({ backupCodes: ['a1b2-c3d4', 'e5f6-g7h8'] });
 
-    await promise;
+    expect(await promise).toEqual({ backupCodes: ['a1b2-c3d4', 'e5f6-g7h8'] });
     httpController.verify();
   });
 

@@ -1,12 +1,14 @@
 import { HttpClient } from '@angular/common/http';
 import { Injectable, inject } from '@angular/core';
-import { Observable } from 'rxjs';
+import { map, Observable } from 'rxjs';
 
 import { API_BASE_URL } from '@shared/api/api-config';
 import { silentErrors } from '@core/interceptors/skip-error-toast';
 import { AuthGateway } from '@features/auth/domain/gateways/auth.gateway';
+import { toBackupCodes } from '@features/auth/infra/two-factor-enable.adapter';
 import type {
   LoginResponse,
+  TwoFactorEnableResponse,
   TwoFactorSecretResponse,
   UserResponse,
 } from '@features/auth/domain/models/auth.types';
@@ -56,12 +58,14 @@ export class HttpAuthGateway extends AuthGateway {
     );
   }
 
-  enableTwoFactor(password: string, code: string): Observable<unknown> {
-    return this.http.post(
-      `${this.apiUrl}/auth/2fa/enable`,
-      { password, code },
-      { withCredentials: true },
-    );
+  enableTwoFactor(password: string, code: string): Observable<TwoFactorEnableResponse> {
+    return this.http
+      .post<unknown>(
+        `${this.apiUrl}/auth/2fa/enable`,
+        { password, code },
+        { withCredentials: true },
+      )
+      .pipe(map((body) => ({ backupCodes: toBackupCodes(body) })));
   }
 
   disableTwoFactor(password: string): Observable<unknown> {

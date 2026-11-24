@@ -17,10 +17,11 @@ import {
   type TwoFactorEnableRequest,
 } from '../../application/two-factor-enable-form';
 import { TwoFactorDisableForm } from '../../application/two-factor-disable-form';
+import { TwoFactorBackupCodes } from '../../application/two-factor-backup-codes';
 
 @Component({
   selector: 'app-two-factor-setup',
-  imports: [PasswordChangeForm, TwoFactorEnableForm, TwoFactorDisableForm],
+  imports: [PasswordChangeForm, TwoFactorEnableForm, TwoFactorDisableForm, TwoFactorBackupCodes],
   changeDetection: ChangeDetectionStrategy.OnPush,
   host: { class: 'block' },
   template: `
@@ -33,6 +34,10 @@ import { TwoFactorDisableForm } from '../../application/two-factor-disable-form'
         [resetToken]="pwdResetToken()"
         (submitted)="changePassword($event)"
       />
+
+      @if (backupCodes().length > 0) {
+        <app-two-factor-backup-codes [codes]="backupCodes()" (acknowledged)="backupCodes.set([])" />
+      }
 
       @if (isTwoFactorEnabled() && !reconfiguring()) {
         <app-two-factor-disable-form
@@ -84,6 +89,7 @@ export class TwoFactorSetup {
   readonly showDisableForm = signal(false);
   readonly tfaResetToken = signal(0);
   readonly reconfiguring = signal(false);
+  readonly backupCodes = signal<readonly string[]>([]);
 
   async changePassword(request: PasswordChangeRequest): Promise<void> {
     if (this.isPwdLoading()) return;
@@ -132,7 +138,11 @@ export class TwoFactorSetup {
     if (this.isTfaLoading()) return;
     const done = this.startTfaCommand();
     try {
-      if (await firstValueFrom(this.authService.enableTwoFactor(request.password, request.code))) {
+      const outcome = await firstValueFrom(
+        this.authService.enableTwoFactor(request.password, request.code),
+      );
+      if (outcome.kind === 'enabled') {
+        this.backupCodes.set(outcome.backupCodes);
         this.tfaSuccess.set(
           this.reconfiguring()
             ? 'Authentification à deux facteurs reconfigurée.'

@@ -6,16 +6,23 @@ import { TwoFactorSetup } from './two-factor-setup';
 import { PasswordChangeForm } from '../../application/password-change-form';
 import { TwoFactorEnableForm } from '../../application/two-factor-enable-form';
 import { TwoFactorDisableForm } from '../../application/two-factor-disable-form';
-import { AuthStore } from '@core/auth/auth-store';
+import { TwoFactorBackupCodes } from '../../application/two-factor-backup-codes';
+import { AuthStore, type TwoFactorEnableOutcome } from '@core/auth/auth-store';
 import type { TwoFactorSecretResponse } from '@features/auth/domain/models/auth.types';
 
 type AuthStoreMock = {
   currentUser: ReturnType<typeof signal<{ isTwoFactorEnabled: boolean } | null>>;
   changePassword: (current: string, next: string) => Observable<boolean>;
   generateTwoFactorSecret: () => Observable<TwoFactorSecretResponse>;
-  enableTwoFactor: (password: string, code: string) => Observable<boolean>;
+  enableTwoFactor: (password: string, code: string) => Observable<TwoFactorEnableOutcome>;
   disableTwoFactor: (password: string) => Observable<boolean>;
 };
+
+const ENABLED: TwoFactorEnableOutcome = {
+  kind: 'enabled',
+  backupCodes: ['a1b2-c3d4', 'e5f6-g7h8'],
+};
+const FAILED: TwoFactorEnableOutcome = { kind: 'failed' };
 
 function makeAuthStore(overrides: Partial<AuthStoreMock> = {}): AuthStoreMock {
   return {
@@ -25,7 +32,7 @@ function makeAuthStore(overrides: Partial<AuthStoreMock> = {}): AuthStoreMock {
     changePassword: () => of(true),
     generateTwoFactorSecret: () =>
       of({ qrCodeDataUrl: 'data:image/png;base64,abc', secret: 'SECRETXYZ' }),
-    enableTwoFactor: () => of(true),
+    enableTwoFactor: () => of(ENABLED),
     disableTwoFactor: () => of(true),
     ...overrides,
   };
@@ -49,6 +56,10 @@ function passwordChild(fixture: ComponentFixture<TwoFactorSetup>): PasswordChang
 
 function enableChild(fixture: ComponentFixture<TwoFactorSetup>): TwoFactorEnableForm | null {
   return fixture.debugElement.query(By.directive(TwoFactorEnableForm))?.componentInstance ?? null;
+}
+
+function backupCodesChild(fixture: ComponentFixture<TwoFactorSetup>): TwoFactorBackupCodes | null {
+  return fixture.debugElement.query(By.directive(TwoFactorBackupCodes))?.componentInstance ?? null;
 }
 
 function disableChild(fixture: ComponentFixture<TwoFactorSetup>): TwoFactorDisableForm | null {
@@ -183,7 +194,7 @@ describe('TwoFactorSetup: 2FA enable orchestration', () => {
   });
 
   it('pushes a success message to the enable child after a successful verification', async () => {
-    const store = makeAuthStore({ enableTwoFactor: () => of(true) });
+    const store = makeAuthStore({ enableTwoFactor: () => of(ENABLED) });
     const fixture = await setup(store);
 
     enableChild(fixture)!.generate.emit();
@@ -198,7 +209,7 @@ describe('TwoFactorSetup: 2FA enable orchestration', () => {
   });
 
   it('pushes an error message to the enable child when the code is invalid', async () => {
-    const store = makeAuthStore({ enableTwoFactor: () => of(false) });
+    const store = makeAuthStore({ enableTwoFactor: () => of(FAILED) });
     const fixture = await setup(store);
 
     enableChild(fixture)!.generate.emit();
@@ -223,6 +234,47 @@ describe('TwoFactorSetup: 2FA enable orchestration', () => {
     await fixture.whenStable();
 
     expect(enableChild(fixture)!.errorMessage()).toContain('Erreur');
+  });
+});
+
+describe('TwoFactorSetup: backup codes after activation', () => {
+  async function activated(
+    store: AuthStoreMock = makeAuthStore(),
+  ): Promise<ComponentFixture<TwoFactorSetup>> {
+    const fixture = await setup(store);
+    enableChild(fixture)?.generate.emit();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    enableChild(fixture)?.verify.emit({ password: 'a-long-password', code: '123456' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return fixture;
+  }
+
+  it('shows no backup codes before any activation', async () => {
+    const fixture = await setup(makeAuthStore());
+    expect(backupCodesChild(fixture)).toBeNull();
+  });
+
+  it('Given a successful activation, Then the backup codes returned by the API are shown', async () => {
+    const fixture = await activated();
+    expect(backupCodesChild(fixture)?.codes()).toEqual(['a1b2-c3d4', 'e5f6-g7h8']);
+  });
+
+  it('Given a refused activation, Then no backup codes are shown', async () => {
+    const fixture = await activated(makeAuthStore({ enableTwoFactor: () => of(FAILED) }));
+    expect(backupCodesChild(fixture)).toBeNull();
+  });
+
+  it('Given the codes are shown, When the admin acknowledges them, Then they are no longer displayed', async () => {
+    const fixture = await activated();
+    expect(backupCodesChild(fixture)).not.toBeNull();
+
+    backupCodesChild(fixture)?.acknowledged.emit();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(backupCodesChild(fixture)).toBeNull();
   });
 });
 

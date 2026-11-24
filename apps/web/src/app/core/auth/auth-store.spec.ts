@@ -113,6 +113,35 @@ describe('AuthStore', () => {
     );
   });
 
+  describe('enableTwoFactor', () => {
+    beforeEach(() => setupService());
+
+    it('Given the API answers, Then the backup codes are handed over and 2FA shows as enabled', () => {
+      service.login('a@b.fr', 'pwd').subscribe();
+      http
+        .expectOne(`${apiBase}/auth/login`)
+        .flush({ user: { id: 'u1', email: 'a@b.fr', isTwoFactorEnabled: false } });
+      let outcome: unknown;
+
+      service.enableTwoFactor('a-long-password', '123456').subscribe((r) => (outcome = r));
+      http.expectOne(`${apiBase}/auth/2fa/enable`).flush({ backupCodes: ['a1b2-c3d4'] });
+
+      expect(outcome).toEqual({ kind: 'enabled', backupCodes: ['a1b2-c3d4'] });
+      expect(service.currentUser()?.isTwoFactorEnabled).toBe(true);
+    });
+
+    it('Given the API refuses, Then the outcome is failed', () => {
+      let outcome: unknown;
+
+      service.enableTwoFactor('a-long-password', '000000').subscribe((r) => (outcome = r));
+      http
+        .expectOne(`${apiBase}/auth/2fa/enable`)
+        .flush({}, { status: 401, statusText: 'Unauthorized' });
+
+      expect(outcome).toEqual({ kind: 'failed' });
+    });
+  });
+
   describe('login', () => {
     beforeEach(() => setupService());
 
