@@ -277,6 +277,79 @@ describe('TwoFactorSetup: 2FA disable orchestration', () => {
   });
 });
 
+describe('TwoFactorSetup: reconfiguring an enabled 2FA', () => {
+  async function reconfiguringSetup(
+    overrides: Partial<AuthStoreMock> = {},
+  ): Promise<{ store: AuthStoreMock; fixture: ComponentFixture<TwoFactorSetup> }> {
+    const store = makeAuthStore(overrides);
+    store.currentUser.set({ isTwoFactorEnabled: true });
+    const fixture = await setup(store);
+    const disable = disableChild(fixture);
+    if (disable === null) throw new Error('disable form not rendered');
+    disable.reconfigure.emit();
+    fixture.detectChanges();
+    await fixture.whenStable();
+    return { store, fixture };
+  }
+
+  function shownEnableChild(fixture: ComponentFixture<TwoFactorSetup>): TwoFactorEnableForm {
+    const child = enableChild(fixture);
+    if (child === null) throw new Error('enable form not rendered');
+    return child;
+  }
+
+  it('Given 2FA enabled, When reconfigure is requested, Then the new QR code and its confirmation form are shown', async () => {
+    const { fixture } = await reconfiguringSetup();
+
+    const enable = shownEnableChild(fixture);
+    expect({
+      qrCodeUrl: enable.qrCodeUrl(),
+      reconfiguring: enable.reconfiguring(),
+      disableShown: disableChild(fixture) !== null,
+    }).toEqual({
+      qrCodeUrl: 'data:image/png;base64,abc',
+      reconfiguring: true,
+      disableShown: false,
+    });
+  });
+
+  it('Given a reconfiguration, When the new app is confirmed, Then the enabled state comes back with a success message', async () => {
+    const { store, fixture } = await reconfiguringSetup();
+    const spy = vi.spyOn(store, 'enableTwoFactor');
+
+    shownEnableChild(fixture).verify.emit({ password: 'a-long-password', code: '123456' });
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(spy).toHaveBeenCalledWith('a-long-password', '123456');
+    expect(enableChild(fixture)).toBeNull();
+    expect(disableChild(fixture)?.successMessage()).toBe(
+      'Authentification à deux facteurs reconfigurée.',
+    );
+  });
+
+  it('Given a reconfiguration, When it is cancelled, Then the enabled state comes back without the pending QR code', async () => {
+    const { fixture } = await reconfiguringSetup();
+
+    shownEnableChild(fixture).cancelled.emit();
+    fixture.detectChanges();
+    await fixture.whenStable();
+
+    expect(enableChild(fixture)).toBeNull();
+    expect(disableChild(fixture)).not.toBeNull();
+    expect(fixture.componentInstance.qrCodeUrl()).toBe('');
+  });
+
+  it('Given the QR generation fails, When reconfigure is requested, Then the enabled state stays with an error', async () => {
+    const { fixture } = await reconfiguringSetup({
+      generateTwoFactorSecret: () => throwError(() => new Error('boom')),
+    });
+
+    expect(enableChild(fixture)).toBeNull();
+    expect(disableChild(fixture)?.errorMessage()).toBe('Erreur lors de la génération du QR code');
+  });
+});
+
 describe('TwoFactorSetup: deferred command keeps the child loading until resolution', () => {
   it('reflects the loading state on the password child while the command is in flight', async () => {
     const store = makeAuthStore({

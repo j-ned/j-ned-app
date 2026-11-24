@@ -174,6 +174,35 @@ describe('TwoFactorEnableForm: verify output', () => {
   });
 });
 
+describe('TwoFactorEnableForm: reconfiguration', () => {
+  it('offers no cancel action for a first activation', () => {
+    const fixture = withQr();
+    expect(byTestId(fixture.nativeElement, 'twofa-reconfigure-cancel')).toBeNull();
+  });
+
+  it('Given a reconfiguration, When cancel is clicked, Then cancelled is emitted', () => {
+    const fixture = withQr();
+    fixture.componentRef.setInput('reconfiguring', true);
+    fixture.detectChanges();
+    let emitted = 0;
+    fixture.componentInstance.cancelled.subscribe(() => (emitted += 1));
+
+    asButton(byTestId(fixture.nativeElement as HTMLElement, 'twofa-reconfigure-cancel')).click();
+
+    expect(emitted).toBe(1);
+  });
+
+  it('Given a reconfiguration, Then the submit action names the new application', () => {
+    const fixture = withQr();
+    fixture.componentRef.setInput('reconfiguring', true);
+    fixture.detectChanges();
+
+    expect(testIdText(fixture.nativeElement as HTMLElement, 'twofa-submit')).toBe(
+      'Confirmer la nouvelle application',
+    );
+  });
+});
+
 describe('TwoFactorEnableForm: reset token', () => {
   it('resets the code form when the resetToken input changes', async () => {
     const fixture = withQr();

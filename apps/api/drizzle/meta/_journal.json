@@ -281,6 +281,13 @@
       "when": 1795536923878,
       "tag": "0039_pending_network_hash",
       "breakpoints": true
+    },
+    {
+      "idx": 40,
+      "version": "7",
+      "when": 1795545209741,
+      "tag": "0040_two_factor_rotation",
+      "breakpoints": true
     }
   ]
 }

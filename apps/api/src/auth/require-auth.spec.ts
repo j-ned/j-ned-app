@@ -22,6 +22,7 @@ describe('requireAuth', () => {
     passwordHash: '$argon2id$...',
     isTwoFactorEnabled: false,
     twoFactorSecret: null,
+    pendingTwoFactorSecret: null,
     twoFactorBackupCodesHash: null,
     tokenVersion: 0,
     createdAt: new Date(0),

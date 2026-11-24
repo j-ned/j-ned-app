@@ -34,7 +34,7 @@ import { TwoFactorDisableForm } from '../../application/two-factor-disable-form'
         (submitted)="changePassword($event)"
       />
 
-      @if (isTwoFactorEnabled()) {
+      @if (isTwoFactorEnabled() && !reconfiguring()) {
         <app-two-factor-disable-form
           [loading]="isTfaLoading()"
           [successMessage]="tfaSuccess()"
@@ -54,8 +54,10 @@ import { TwoFactorDisableForm } from '../../application/two-factor-disable-form'
           [successMessage]="tfaSuccess()"
           [errorMessage]="tfaError()"
           [resetToken]="tfaResetToken()"
+          [reconfiguring]="reconfiguring()"
           (generate)="generate()"
           (verify)="enable($event)"
+          (cancelled)="cancelReconfigure()"
         />
       }
     </div>
@@ -81,6 +83,7 @@ export class TwoFactorSetup {
   readonly isTfaLoading = signal(false);
   readonly showDisableForm = signal(false);
   readonly tfaResetToken = signal(0);
+  readonly reconfiguring = signal(false);
 
   async changePassword(request: PasswordChangeRequest): Promise<void> {
     if (this.isPwdLoading()) return;
@@ -130,7 +133,12 @@ export class TwoFactorSetup {
     const done = this.startTfaCommand();
     try {
       if (await firstValueFrom(this.authService.enableTwoFactor(request.password, request.code))) {
-        this.tfaSuccess.set('Authentification à deux facteurs activée avec succès !');
+        this.tfaSuccess.set(
+          this.reconfiguring()
+            ? 'Authentification à deux facteurs reconfigurée.'
+            : 'Authentification à deux facteurs activée avec succès !',
+        );
+        this.reconfiguring.set(false);
         this.qrCodeUrl.set('');
         this.secret.set('');
         this.tfaResetToken.update((token) => token + 1);
@@ -164,10 +172,19 @@ export class TwoFactorSetup {
     }
   }
 
-  reconfigure(): void {
+  async reconfigure(): Promise<void> {
     this.tfaError.set('');
     this.tfaSuccess.set('');
-    void this.generate();
+    await this.generate();
+    if (this.qrCodeUrl()) this.reconfiguring.set(true);
+  }
+
+  cancelReconfigure(): void {
+    this.reconfiguring.set(false);
+    this.qrCodeUrl.set('');
+    this.secret.set('');
+    this.tfaError.set('');
+    this.tfaResetToken.update((token) => token + 1);
   }
 
   private startTfaCommand(): () => void {

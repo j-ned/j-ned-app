@@ -105,18 +105,35 @@ const TOTP_PATTERN = /^\d{6}$/;
               />
               <app-field-error [field]="tfaForm.code" errorId="twofa-setup-code-error" />
             </div>
-            <button
-              type="submit"
-              data-testid="twofa-submit"
-              [disabled]="loading()"
-              class="w-full min-h-11 py-2.5 px-4 rounded-lg bg-status-success hover:bg-status-success/90 text-on-status-success font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
-            >
-              @if (loading()) {
-                Activation...
-              } @else {
-                Activer le 2FA
+            <div class="flex flex-col gap-3 sm:flex-row">
+              @if (reconfiguring()) {
+                <button
+                  appButton
+                  type="button"
+                  variant="outlined"
+                  [block]="true"
+                  class="sm:flex-1"
+                  data-testid="twofa-reconfigure-cancel"
+                  (click)="cancelled.emit()"
+                >
+                  Annuler
+                </button>
               }
-            </button>
+              <button
+                type="submit"
+                data-testid="twofa-submit"
+                [disabled]="loading()"
+                class="w-full sm:flex-1 min-h-11 py-2.5 px-4 rounded-lg bg-status-success hover:bg-status-success/90 text-on-status-success font-medium disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-300"
+              >
+                @if (loading()) {
+                  Activation...
+                } @else if (reconfiguring()) {
+                  Confirmer la nouvelle application
+                } @else {
+                  Activer le 2FA
+                }
+              </button>
+            </div>
           </form>
         </div>
       } @else {
@@ -164,8 +181,11 @@ export class TwoFactorEnableForm {
   readonly errorMessage = input('');
   readonly successMessage = input('');
   readonly resetToken = input<number>();
+  // 2FA déjà active : l'application actuelle reste valable tant que la nouvelle n'est pas confirmée.
+  readonly reconfiguring = input(false);
   readonly generate = output<void>();
   readonly verify = output<TwoFactorEnableRequest>();
+  readonly cancelled = output<void>();
 
   private readonly _model = signal({ ...EMPTY });
 

@@ -8,6 +8,7 @@ export const TEST_ADMIN: User = {
   passwordHash: 'not-a-hash',
   isTwoFactorEnabled: false,
   twoFactorSecret: null,
+  pendingTwoFactorSecret: null,
   twoFactorBackupCodesHash: null,
   tokenVersion: 0,
   createdAt: new Date(0),

@@ -125,6 +125,7 @@ function account(id: string): User {
     passwordHash: 'hash',
     isTwoFactorEnabled: false,
     twoFactorSecret: null,
+    pendingTwoFactorSecret: null,
     twoFactorBackupCodesHash: null,
     tokenVersion: 0,
     createdAt: new Date(0),
