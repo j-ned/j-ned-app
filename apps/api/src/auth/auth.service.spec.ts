@@ -550,33 +550,78 @@ describe('AuthService', () => {
   });
 
   describe('enableTwoFactor', () => {
-    it('throw BadRequestException si pas de secret en attente', async () => {
-      const user = mkUser({ twoFactorSecret: null });
-      await expect(service.enableTwoFactor(user, '123456')).rejects.toThrow(
-        BadRequestException,
-      );
-    });
+    const pendingUser = (overrides: Partial<User> = {}) =>
+      mkUser({ twoFactorSecret: 'SECRET', ...overrides });
 
-    it('throw UnauthorizedException si code invalide', async () => {
-      const user = mkUser({ twoFactorSecret: 'SECRET' });
-      twoFactor.verifyTotpCode.mockReturnValue(false);
-      await expect(service.enableTwoFactor(user, '000000')).rejects.toThrow(
-        UnauthorizedException,
-      );
-    });
-
-    it('génère + hash backup codes et active 2FA si code valide', async () => {
-      const user = mkUser({ twoFactorSecret: 'SECRET' });
+    beforeEach(() => {
+      password.verify.mockResolvedValue(true);
       twoFactor.verifyTotpCode.mockReturnValue(true);
       twoFactor.generateBackupCodes.mockReturnValue(['a1b2-c3d4', 'e5f6-g7h8']);
       twoFactor.hashBackupCodes.mockResolvedValue(['hash1', 'hash2']);
+    });
 
-      const result = await service.enableTwoFactor(user, '123456');
+    it('throw BadRequestException si pas de secret en attente', async () => {
+      const user = mkUser({ twoFactorSecret: null });
+      await expect(
+        service.enableTwoFactor(user, 'good', '123456'),
+      ).rejects.toThrow(BadRequestException);
+    });
+
+    it('throw UnauthorizedException si code invalide', async () => {
+      twoFactor.verifyTotpCode.mockReturnValue(false);
+      await expect(
+        service.enableTwoFactor(pendingUser(), 'good', '000000'),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('génère + hash backup codes et active 2FA si mot de passe et code valides', async () => {
+      const user = pendingUser();
+
+      const result = await service.enableTwoFactor(user, 'good', '123456');
+
       expect(result).toEqual({ backupCodes: ['a1b2-c3d4', 'e5f6-g7h8'] });
       expect(users.enableTwoFactor).toHaveBeenCalledWith(user.id, [
         'hash1',
         'hash2',
       ]);
+    });
+
+    // Une session volée ne doit pas lier son propre authentificateur : le mot de passe est exigé,
+    // comme pour désactiver la 2FA ou changer de mot de passe.
+    it('Given a wrong password, When enabling 2FA, Then it gets 401 and the second factor is not bound', async () => {
+      password.verify.mockResolvedValue(false);
+
+      await expect(
+        service.enableTwoFactor(pendingUser(), 'bad', '123456'),
+      ).rejects.toThrow(UnauthorizedException);
+      expect(users.enableTwoFactor).not.toHaveBeenCalled();
+    });
+
+    it('Given 2FA already enabled, When enabling again, Then it gets 400 and the backup codes are not replaced', async () => {
+      await expect(
+        service.enableTwoFactor(
+          pendingUser({ isTwoFactorEnabled: true }),
+          'good',
+          '123456',
+        ),
+      ).rejects.toThrow(BadRequestException);
+      expect(users.enableTwoFactor).not.toHaveBeenCalled();
+    });
+
+    it('Given 5 wrong passwords on change-password, When enabling 2FA with the right one, Then it gets 429: same per-account counter', async () => {
+      const user = pendingUser();
+      password.verify.mockResolvedValue(false);
+      for (let attempt = 0; attempt < 5; attempt += 1) {
+        await expect(
+          service.changePassword(user, 'bad', 'new-password-12'),
+        ).rejects.toThrow(UnauthorizedException);
+      }
+      password.verify.mockResolvedValue(true);
+
+      await expect(
+        service.enableTwoFactor(user, 'good', '123456'),
+      ).rejects.toThrow(TooManyRequestsException);
+      expect(users.enableTwoFactor).not.toHaveBeenCalled();
     });
   });
 

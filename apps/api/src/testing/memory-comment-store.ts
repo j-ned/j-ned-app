@@ -59,6 +59,12 @@ export class MemoryCommentStore implements CommentStore {
     if (fromSender.length >= caps.perSender) {
       return Promise.resolve({ kind: 'sender-cap' });
     }
+    const fromNetwork = pending.filter(
+      (c) => c.senderNetworkHash === comment.senderNetworkHash,
+    );
+    if (fromNetwork.length >= caps.perNetwork) {
+      return Promise.resolve({ kind: 'sender-cap' });
+    }
     const row: BlogComment = {
       id: randomUUID(),
       postId: comment.postId,
@@ -71,6 +77,7 @@ export class MemoryCommentStore implements CommentStore {
       authorName: comment.name,
       authorEmail: comment.email,
       senderHash: comment.senderHash,
+      senderNetworkHash: comment.senderNetworkHash,
       body: comment.body,
       createdAt: this.now(),
     };
@@ -94,6 +101,7 @@ export class MemoryCommentStore implements CommentStore {
       authorName: null,
       authorEmail: null,
       senderHash: null,
+      senderNetworkHash: null,
       body: reply.body,
       createdAt: this.now(),
     };
@@ -155,6 +163,7 @@ export class MemoryCommentStore implements CommentStore {
       status: 'published',
       moderatedAt: at,
       senderHash: null,
+      senderNetworkHash: null,
     };
     return Promise.resolve(true);
   }

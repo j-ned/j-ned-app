@@ -1,11 +1,15 @@
 import { ChangeDetectionStrategy, Component, effect, input, output, signal } from '@angular/core';
-import { FormField, FormRoot, form, pattern, required } from '@angular/forms/signals';
+import { FormField, FormRoot, form, minLength, pattern, required } from '@angular/forms/signals';
 import { AppIcon } from '@shared/icons/app-icon';
 import { StatusMessage } from '@shared/ui/status-message';
 import { Button } from '@shared/ui/button';
 import { FieldError } from '@shared/ui/field-error';
+import { PASSWORD_MIN_LENGTH } from '@features/auth/domain/models/password-policy';
 
-const EMPTY = { code: '' };
+// L'API exige le mot de passe pour lier un authentificateur : une session seule ne suffit pas.
+export type TwoFactorEnableRequest = { readonly password: string; readonly code: string };
+
+const EMPTY = { password: '', code: '' };
 const TOTP_PATTERN = /^\d{6}$/;
 
 @Component({
@@ -66,6 +70,23 @@ const TOTP_PATTERN = /^\d{6}$/;
           }
 
           <form [formRoot]="tfaForm" class="space-y-4">
+            <div>
+              @let passwordInError = tfaForm.password().touched() && tfaForm.password().invalid();
+              <label for="totp-password" class="form-label">Mot de passe</label>
+              <input
+                id="totp-password"
+                data-testid="twofa-setup-password"
+                type="password"
+                [formField]="tfaForm.password"
+                autocomplete="current-password"
+                aria-required="true"
+                [attr.aria-invalid]="passwordInError"
+                [attr.aria-describedby]="passwordInError ? 'twofa-setup-password-error' : null"
+                class="form-input"
+                placeholder="Ton mot de passe"
+              />
+              <app-field-error [field]="tfaForm.password" errorId="twofa-setup-password-error" />
+            </div>
             <div>
               @let codeInError = tfaForm.code().touched() && tfaForm.code().invalid();
               <label for="totp-code" class="form-label">Code de vérification</label>
@@ -144,20 +165,25 @@ export class TwoFactorEnableForm {
   readonly successMessage = input('');
   readonly resetToken = input<number>();
   readonly generate = output<void>();
-  readonly verify = output<string>();
+  readonly verify = output<TwoFactorEnableRequest>();
 
   private readonly _model = signal({ ...EMPTY });
 
   readonly tfaForm = form(
     this._model,
     (path) => {
+      required(path.password, { message: 'Ce champ est obligatoire' });
+      minLength(path.password, PASSWORD_MIN_LENGTH, {
+        message: `Le mot de passe doit contenir au moins ${PASSWORD_MIN_LENGTH} caractères`,
+      });
       required(path.code, { message: 'Ce champ est obligatoire' });
       pattern(path.code, TOTP_PATTERN, { message: 'Le code doit contenir 6 chiffres' });
     },
     {
       submission: {
         action: async () => {
-          this.verify.emit(this._model().code);
+          const { password, code } = this._model();
+          this.verify.emit({ password, code });
         },
       },
     },

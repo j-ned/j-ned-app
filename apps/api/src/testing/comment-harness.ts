@@ -52,6 +52,8 @@ export function seedCommentRow(seed: SeedComment): BlogComment {
     authorName: owner ? null : (seed.name ?? 'Camille'),
     authorEmail: owner ? null : (seed.email ?? 'camille@example.test'),
     senderHash: owner ? null : (seed.senderHash ?? 'a'.repeat(64)),
+    // Ligne semée comme une ligne antérieure au plafond par réseau : sans empreinte de réseau.
+    senderNetworkHash: null,
     body: seed.body ?? 'Un commentaire',
     createdAt,
   };

@@ -129,6 +129,12 @@ est son conteneur.
 - Restauration dans une base **vide** : créer la base, puis
   `docker exec -e PGDATABASE=<base> <backup> backup.sh restore <objet>`. Les privilèges ne sont pas
   dans la sauvegarde : rejouer `postgres/app-role.sql` dans la base restaurée avant d'y brancher l'API.
+- La restauration révoque toutes les sessions d'administration (compteur `token_version` porté au-delà
+  de toute valeur émise) : se reconnecter ensuite. Elle remet aussi l'état de l'instantané : refaire
+  tout changement de mot de passe, de 2FA ou de codes de secours postérieur à la sauvegarde, et
+  repasser sur les commentaires et messages supprimés ou modérés depuis.
+- Un objet que gpg ne déchiffre pas avec la phrase (message OpenPGP non chiffré compris) est refusé
+  avant `pg_restore`.
 - La phrase `BACKUP_PASSPHRASE` se conserve aussi hors du serveur : sans elle, aucune sauvegarde ne
   se déchiffre.
 - Un échec n'alerte personne : il s'écrit dans les journaux du conteneur. Regarder le bucket de temps

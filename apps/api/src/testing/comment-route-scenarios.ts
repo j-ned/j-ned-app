@@ -480,6 +480,25 @@ export function describeCommentRoutes(
         expect(res.status).toBe(202);
       });
 
+      // Un /48 IPv6 contient 65 536 /64 : sans plafond par réseau, une seule allocation remplirait la
+      // file commune et fermerait les commentaires à tous.
+      it('Given one IPv6 /48 sending from many /64s, When it reaches 10 pending comments, Then its next one gets 429 while another network still passes', async () => {
+        await harness.seedPost({ slug: 'usinage' });
+        const statuses: number[] = [];
+        for (const subnet of ['1', '2', '3', '4'])
+          for (const host of ['1', '2', '3'])
+            statuses.push(
+              (await post('usinage', COMMENT, `2001:db8:77:${subnet}::${host}`))
+                .status,
+            );
+
+        const other = await post('usinage', COMMENT, '2001:db8:78:1::1');
+
+        expect(statuses).toEqual([...Array<number>(10).fill(202), 429, 429]);
+        expect(other.status).toBe(202);
+        expect(await harness.comments()).toHaveLength(11);
+      });
+
       it('Given 100 pending comments, When any visitor sends one, Then 503: the moderation queue is closed', async () => {
         const article = await harness.seedPost({ slug: 'usinage' });
         for (let i = 0; i < 100; i += 1)
@@ -523,9 +542,10 @@ export function describeCommentRoutes(
             name: 'Camille',
             email: EMAIL,
             senderHash: 'e'.repeat(64),
+            senderNetworkHash: 'e'.repeat(64),
             body: 'Une réponse',
           },
-          { perSender: 3, total: 100 },
+          { perSender: 3, perNetwork: 10, total: 100 },
         );
       const ownerReply = (postId: string, parentId: string) =>
         harness.store.insertOwnerReply({

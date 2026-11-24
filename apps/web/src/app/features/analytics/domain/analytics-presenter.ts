@@ -171,11 +171,16 @@ export type AnalyticsCsvSections = {
   outboundClicks: readonly EventCount[];
 };
 
+// Les libellés viennent de visiteurs anonymes (url, entityTitle) : un tableur évaluerait une cellule
+// qui commence par l'un de ces caractères. L'apostrophe la force en texte (recommandation OWASP).
+const FORMULA_TRIGGER = /^[=+\-@\t\r]/;
+
 export function escapeCsv(value: string): string {
-  if (value.includes(',') || value.includes('"') || value.includes('\n')) {
-    return `"${value.replace(/"/g, '""')}"`;
+  const inert = FORMULA_TRIGGER.test(value) ? `'${value}` : value;
+  if (/[,"\n\r]/.test(inert)) {
+    return `"${inert.replace(/"/g, '""')}"`;
   }
-  return value;
+  return inert;
 }
 
 export function buildAnalyticsCsv(s: AnalyticsCsvSections): string {

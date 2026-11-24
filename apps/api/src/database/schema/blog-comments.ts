@@ -42,6 +42,8 @@ export const blogComments = pgTable(
     authorEmail: text('author_email'),
     // Empreinte HMAC de l'IP : relie les envois d'un même expéditeur sans conserver l'IP.
     senderHash: text('sender_hash'),
+    // Empreinte du réseau de l'expéditeur (IPv4 /24, IPv6 /48), pour le plafond par réseau.
+    senderNetworkHash: text('sender_network_hash'),
     body: text('body').notNull(),
     createdAt: timestamp('created_at', { withTimezone: true })
       .notNull()

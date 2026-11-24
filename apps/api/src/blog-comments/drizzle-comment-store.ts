@@ -106,6 +106,18 @@ export class DrizzleCommentStore implements CommentStore {
         if ((fromSender?.count ?? 0) >= caps.perSender) {
           return { kind: 'sender-cap' };
         }
+        const [fromNetwork] = await tx
+          .select({ count })
+          .from(blogComments)
+          .where(
+            and(
+              pending,
+              eq(blogComments.senderNetworkHash, comment.senderNetworkHash),
+            ),
+          );
+        if ((fromNetwork?.count ?? 0) >= caps.perNetwork) {
+          return { kind: 'sender-cap' };
+        }
         const rows = await tx
           .insert(blogComments)
           .values({
@@ -117,6 +129,7 @@ export class DrizzleCommentStore implements CommentStore {
             authorName: comment.name,
             authorEmail: comment.email,
             senderHash: comment.senderHash,
+            senderNetworkHash: comment.senderNetworkHash,
             body: comment.body,
           })
           .returning();
@@ -225,10 +238,15 @@ export class DrizzleCommentStore implements CommentStore {
 
   async publish(id: string, at: Date): Promise<boolean> {
     // Le statut de départ est dans le WHERE : deux publications simultanées ne s'écrasent pas.
-    // L'empreinte ne sert qu'au plafond des envois en attente : effacée dès la publication.
+    // Les empreintes ne servent qu'aux plafonds des envois en attente : effacées dès la publication.
     const rows = await this.db
       .update(blogComments)
-      .set({ status: 'published', moderatedAt: at, senderHash: null })
+      .set({
+        status: 'published',
+        moderatedAt: at,
+        senderHash: null,
+        senderNetworkHash: null,
+      })
       .where(and(eq(blogComments.id, id), eq(blogComments.status, 'pending')))
       .returning({ id: blogComments.id });
     return rows.length > 0;

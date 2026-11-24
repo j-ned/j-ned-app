@@ -3,6 +3,7 @@ import pino from 'pino';
 import {
   LOG_REDACT_PATHS,
   redactLogArguments,
+  redactQueryParams,
   serializeError,
   serializeRequest,
 } from './log-redact';
@@ -80,7 +81,10 @@ export class Logger {
 
   error(first: unknown, messageOrStack?: string): void {
     if (typeof first === 'string' && messageOrStack !== undefined) {
-      root.error({ context: this.context, stack: messageOrStack }, first);
+      // La pile d'une DrizzleQueryError recopie ses valeurs liées ; le champ `stack` d'un objet de
+      // contexte échappe au sérialiseur `err` et part tel quel à Sentry dans `extra.context`.
+      const stack = redactQueryParams(messageOrStack, 'stack');
+      root.error({ context: this.context, stack }, first);
       return;
     }
     this.write('error', first, messageOrStack);

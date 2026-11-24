@@ -1,7 +1,7 @@
 import { describedError } from '@shared/testing/described-error';
 import { byTestId, testIdText } from '@shared/testing/by-test-id';
 import { ComponentFixture, TestBed } from '@angular/core/testing';
-import { TwoFactorEnableForm } from './two-factor-enable-form';
+import { TwoFactorEnableForm, type TwoFactorEnableRequest } from './two-factor-enable-form';
 import { asButton } from '@shared/testing/as-button';
 
 function render(): ComponentFixture<TwoFactorEnableForm> {
@@ -132,10 +132,27 @@ describe('TwoFactorEnableForm: verify output', () => {
     expect(emitted).toBe(false);
   });
 
-  it('emits verify with the typed code when the form is valid', async () => {
+  it('emits verify with the typed password and code when the form is valid', async () => {
     const fixture = withQr();
-    let received: string | undefined;
-    fixture.componentInstance.verify.subscribe((code: string) => (received = code));
+    let received: TwoFactorEnableRequest | undefined;
+    fixture.componentInstance.verify.subscribe((request) => (received = request));
+
+    fixture.componentInstance.tfaForm.password().value.set('a-long-password');
+    fixture.componentInstance.tfaForm.code().value.set('123456');
+    fixture.detectChanges();
+
+    const form = fixture.nativeElement.querySelector('form') as HTMLFormElement;
+    form.dispatchEvent(new Event('submit'));
+    await fixture.whenStable();
+
+    expect(received).toEqual({ password: 'a-long-password', code: '123456' });
+  });
+
+  // Une session seule ne suffit pas à lier un authentificateur : l'API exige le mot de passe.
+  it('does not emit verify without the account password', async () => {
+    const fixture = withQr();
+    let emitted = false;
+    fixture.componentInstance.verify.subscribe(() => (emitted = true));
 
     fixture.componentInstance.tfaForm.code().value.set('123456');
     fixture.detectChanges();
@@ -144,7 +161,16 @@ describe('TwoFactorEnableForm: verify output', () => {
     form.dispatchEvent(new Event('submit'));
     await fixture.whenStable();
 
-    expect(received).toBe('123456');
+    expect(emitted).toBe(false);
+  });
+
+  it('password input has type=password, autocomplete=current-password, aria-required=true', () => {
+    const fixture = withQr();
+    const password = byTestId(fixture.nativeElement, 'twofa-setup-password') as HTMLInputElement;
+    expect(password).not.toBeNull();
+    expect(password.type).toBe('password');
+    expect(password.autocomplete).toBe('current-password');
+    expect(password.getAttribute('aria-required')).toBe('true');
   });
 });
 
