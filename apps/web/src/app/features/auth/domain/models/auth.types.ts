@@ -14,3 +14,7 @@ export type TwoFactorSecretResponse = {
   secret: string;
   qrCodeDataUrl: string;
 };
+
+export type TwoFactorEnableResponse = {
+  readonly backupCodes: readonly string[];
+};

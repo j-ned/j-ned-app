@@ -21,6 +21,15 @@ const bySlugOrId = (key) => (row) => row.slug === key || row.id === key;
 const ADMIN_SESSION = process.env.STUB_ADMIN_SESSION === '1';
 const STUB_ADMIN = { id: 'stub-admin', email: 'admin@stub.test', isTwoFactorEnabled: false };
 
+// 2FA de l'admin factice : de quoi parcourir l'écran Sécurité (QR, puis codes de secours), sans
+// secret réel ni vérification de code.
+const STUB_TOTP = {
+  secret: 'STUBSECRETSTUBSECRET',
+  qrCodeDataUrl:
+    'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==',
+};
+const STUB_BACKUP_CODES = Array.from({ length: 10 }, (_, i) => `stub-000${i}`);
+
 // Un `PUT /api/profile` est gardé en mémoire : la fixture sur disque reste la ligne de base.
 let savedProfile = null;
 const readProfile = async () => savedProfile ?? readFixture('profile');
@@ -201,6 +210,12 @@ async function route(req, pathname, searchParams) {
   if (method === 'POST' && pathname === '/api/profile/portrait') return replacePortrait(req);
   if (method === 'DELETE' && pathname === '/api/profile/portrait') return removePortrait();
   if (ADMIN_SESSION && method === 'GET' && pathname === '/api/auth/me') return [200, STUB_ADMIN];
+  if (ADMIN_SESSION && method === 'POST' && pathname === '/api/auth/2fa/generate') {
+    return [200, STUB_TOTP];
+  }
+  if (ADMIN_SESSION && method === 'POST' && pathname === '/api/auth/2fa/enable') {
+    return [200, { backupCodes: STUB_BACKUP_CODES }];
+  }
   if (method !== 'GET' && method !== 'HEAD') return [405, { message: 'Method Not Allowed' }];
 
   if (ADMIN_SESSION) {

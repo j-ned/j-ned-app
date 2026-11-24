@@ -1,5 +1,10 @@
 import type { Observable } from 'rxjs';
-import type { LoginResponse, TwoFactorSecretResponse, UserResponse } from '../models/auth.types';
+import type {
+  LoginResponse,
+  TwoFactorEnableResponse,
+  TwoFactorSecretResponse,
+  UserResponse,
+} from '../models/auth.types';
 
 export abstract class AuthGateway {
   abstract login(email: string, password: string): Observable<LoginResponse>;
@@ -8,6 +13,6 @@ export abstract class AuthGateway {
   abstract logout(): Observable<unknown>;
   abstract changePassword(currentPassword: string, newPassword: string): Observable<unknown>;
   abstract generateTwoFactorSecret(): Observable<TwoFactorSecretResponse>;
-  abstract enableTwoFactor(password: string, code: string): Observable<unknown>;
+  abstract enableTwoFactor(password: string, code: string): Observable<TwoFactorEnableResponse>;
   abstract disableTwoFactor(password: string): Observable<unknown>;
 }

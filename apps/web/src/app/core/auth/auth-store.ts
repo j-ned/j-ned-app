@@ -31,6 +31,10 @@ function loginFailure(error: unknown): LoginOutcome {
   return error.status === 429 ? 'throttled' : 'error';
 }
 
+export type TwoFactorEnableOutcome =
+  | { readonly kind: 'enabled'; readonly backupCodes: readonly string[] }
+  | { readonly kind: 'failed' };
+
 export type TwoFactorOutcome = 'success' | 'invalid-code' | 'throttled' | 'error';
 
 function twoFactorFailure(error: unknown): TwoFactorOutcome {
@@ -96,7 +100,7 @@ export class AuthStore {
     return this.gateway.generateTwoFactorSecret();
   }
 
-  enableTwoFactor(password: string, code: string): Observable<boolean> {
+  enableTwoFactor(password: string, code: string): Observable<TwoFactorEnableOutcome> {
     return this.gateway.enableTwoFactor(password, code).pipe(
       tap(() => {
         const user = this._currentUser();
@@ -104,8 +108,8 @@ export class AuthStore {
           this._currentUser.set({ ...user, isTwoFactorEnabled: true });
         }
       }),
-      map(() => true),
-      catchError(() => of(false)),
+      map(({ backupCodes }): TwoFactorEnableOutcome => ({ kind: 'enabled', backupCodes })),
+      catchError(() => of<TwoFactorEnableOutcome>({ kind: 'failed' })),
     );
   }
 

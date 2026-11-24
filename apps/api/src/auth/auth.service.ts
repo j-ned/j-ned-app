@@ -47,7 +47,9 @@ export type AuthUsers = Pick<
   | 'findByEmail'
   | 'updatePassword'
   | 'updateTwoFactorSecret'
+  | 'updatePendingTwoFactorSecret'
   | 'enableTwoFactor'
+  | 'rotateTwoFactor'
   | 'disableTwoFactor'
   | 'consumeBackupCode'
   | 'revokeSessions'
@@ -228,44 +230,52 @@ export class AuthService {
     await this.users.updatePassword(user.id, newHash);
   }
 
+  // 2FA déjà active : le nouveau secret attend sa confirmation, l'application actuelle reste valable.
   async generateTwoFactorSecret(
     user: User,
   ): Promise<{ secret: string; qrCodeDataUrl: string }> {
-    if (user.isTwoFactorEnabled) {
-      throw new BadRequestException('2FA is already enabled');
-    }
     const secret = this.twoFactor.generateSecret();
     const qrCodeDataUrl = await this.twoFactor.generateQrCodeDataUrl(
       user.email,
       secret,
     );
-    await this.users.updateTwoFactorSecret(user.id, secret);
+    if (user.isTwoFactorEnabled) {
+      await this.users.updatePendingTwoFactorSecret(user.id, secret);
+    } else {
+      await this.users.updateTwoFactorSecret(user.id, secret);
+    }
     return { secret, qrCodeDataUrl };
   }
 
   // Mot de passe exigé, comme pour désactiver : une session volée ne lie pas son propre authentificateur
-  // et ne remplace pas les codes de secours du propriétaire.
+  // et ne remplace pas les codes de secours du propriétaire. 2FA active : confirme la reconfiguration.
   async enableTwoFactor(
     user: User,
     password: string,
     code: string,
   ): Promise<{ backupCodes: string[] }> {
-    if (user.isTwoFactorEnabled) {
-      throw new BadRequestException('2FA is already enabled');
+    const candidate = user.isTwoFactorEnabled
+      ? user.pendingTwoFactorSecret
+      : user.twoFactorSecret;
+    if (!candidate) {
+      throw new BadRequestException(
+        user.isTwoFactorEnabled
+          ? '2FA is already enabled'
+          : 'Generate a 2FA secret first via /auth/2fa/generate',
+      );
     }
     const ok = await this.verifyCurrentPassword(user, password);
     if (!ok) throw new UnauthorizedException('Invalid password');
-    if (!user.twoFactorSecret) {
-      throw new BadRequestException(
-        'Generate a 2FA secret first via /auth/2fa/generate',
-      );
-    }
-    if (!this.twoFactor.verifyTotpCode(user.twoFactorSecret, code)) {
+    if (!this.twoFactor.verifyTotpCode(candidate, code)) {
       throw new UnauthorizedException('Invalid 2FA code');
     }
     const backupCodes = this.twoFactor.generateBackupCodes();
     const hashes = await this.twoFactor.hashBackupCodes(backupCodes);
-    await this.users.enableTwoFactor(user.id, hashes);
+    if (user.isTwoFactorEnabled) {
+      await this.users.rotateTwoFactor(user.id, candidate, hashes);
+    } else {
+      await this.users.enableTwoFactor(user.id, hashes);
+    }
     return { backupCodes };
   }
 

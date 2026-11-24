@@ -10,6 +10,8 @@ export const users = pgTable('users', {
   passwordHash: text('password_hash').notNull(),
   isTwoFactorEnabled: boolean('is_two_factor_enabled').notNull().default(false),
   twoFactorSecret: text('two_factor_secret'),
+  // Secret d'une reconfiguration en cours : le secret actif reste valable jusqu'à sa confirmation.
+  pendingTwoFactorSecret: text('pending_two_factor_secret'),
   twoFactorBackupCodesHash: text('two_factor_backup_codes_hash').array(),
   // Incrémenté au changement de password / activation-désactivation 2FA.
   // Un JWT dont le tokenVersion diverge de celui en DB est rejeté (JwtStrategy) :

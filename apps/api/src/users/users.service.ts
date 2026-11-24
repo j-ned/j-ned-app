@@ -52,6 +52,34 @@ export class UsersService {
       .where(eq(users.id, id));
   }
 
+  async updatePendingTwoFactorSecret(
+    id: string,
+    secret: string,
+  ): Promise<void> {
+    await this.db
+      .update(users)
+      .set({ pendingTwoFactorSecret: secret, updatedAt: new Date() })
+      .where(eq(users.id, id));
+  }
+
+  // Le secret en attente devient le secret actif ; les anciens codes de secours et les sessions tombent.
+  async rotateTwoFactor(
+    id: string,
+    secret: string,
+    backupCodesHash: string[],
+  ): Promise<void> {
+    await this.db
+      .update(users)
+      .set({
+        twoFactorSecret: secret,
+        pendingTwoFactorSecret: null,
+        twoFactorBackupCodesHash: backupCodesHash,
+        tokenVersion: sql`${users.tokenVersion} + 1`,
+        updatedAt: new Date(),
+      })
+      .where(eq(users.id, id));
+  }
+
   async enableTwoFactor(id: string, backupCodesHash: string[]): Promise<void> {
     await this.db
       .update(users)
@@ -70,6 +98,7 @@ export class UsersService {
       .set({
         isTwoFactorEnabled: false,
         twoFactorSecret: null,
+        pendingTwoFactorSecret: null,
         twoFactorBackupCodesHash: null,
         tokenVersion: sql`${users.tokenVersion} + 1`,
         updatedAt: new Date(),

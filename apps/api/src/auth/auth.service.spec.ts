@@ -35,6 +35,7 @@ describe('AuthService', () => {
     passwordHash: '$argon2id$...',
     isTwoFactorEnabled: false,
     twoFactorSecret: null,
+    pendingTwoFactorSecret: null,
     twoFactorBackupCodesHash: null,
     tokenVersion: 0,
     createdAt: new Date(),
@@ -50,7 +51,9 @@ describe('AuthService', () => {
       findByEmail: jest.fn(),
       updatePassword: jest.fn(),
       updateTwoFactorSecret: jest.fn(),
+      updatePendingTwoFactorSecret: jest.fn(),
       enableTwoFactor: jest.fn(),
+      rotateTwoFactor: jest.fn(),
       disableTwoFactor: jest.fn(),
       consumeBackupCode: jest.fn(),
       revokeSessions: jest.fn(),
@@ -524,11 +527,28 @@ describe('AuthService', () => {
   });
 
   describe('generateTwoFactorSecret', () => {
-    it('throw BadRequestException si déjà enabled', async () => {
-      const user = mkUser({ isTwoFactorEnabled: true });
-      await expect(service.generateTwoFactorSecret(user)).rejects.toThrow(
-        BadRequestException,
+    // Reconfiguration : le nouveau secret attend sa confirmation, l'application actuelle reste valable.
+    it('Given 2FA enabled, When a secret is generated, Then it is kept pending and the active secret is untouched', async () => {
+      const user = mkUser({
+        isTwoFactorEnabled: true,
+        twoFactorSecret: 'ACTIVE',
+      });
+      twoFactor.generateSecret.mockReturnValue('NEXT-SECRET');
+      twoFactor.generateQrCodeDataUrl.mockResolvedValue(
+        'data:image/png;base64,NEXT',
       );
+
+      const result = await service.generateTwoFactorSecret(user);
+
+      expect(result).toEqual({
+        secret: 'NEXT-SECRET',
+        qrCodeDataUrl: 'data:image/png;base64,NEXT',
+      });
+      expect(users.updatePendingTwoFactorSecret).toHaveBeenCalledWith(
+        user.id,
+        'NEXT-SECRET',
+      );
+      expect(users.updateTwoFactorSecret).not.toHaveBeenCalled();
     });
 
     it('génère secret + QR code et persiste', async () => {
@@ -606,6 +626,50 @@ describe('AuthService', () => {
         ),
       ).rejects.toThrow(BadRequestException);
       expect(users.enableTwoFactor).not.toHaveBeenCalled();
+    });
+
+    describe('when 2FA is already enabled (reconfiguration)', () => {
+      const reconfiguring = (overrides: Partial<User> = {}) =>
+        mkUser({
+          isTwoFactorEnabled: true,
+          twoFactorSecret: 'ACTIVE',
+          pendingTwoFactorSecret: 'NEXT',
+          ...overrides,
+        });
+
+      it('Given a pending secret, When the password and a code of the new app are valid, Then the secret rotates with new backup codes', async () => {
+        const user = reconfiguring();
+
+        const result = await service.enableTwoFactor(user, 'good', '123456');
+
+        expect(result).toEqual({ backupCodes: ['a1b2-c3d4', 'e5f6-g7h8'] });
+        expect(twoFactor.verifyTotpCode).toHaveBeenCalledWith('NEXT', '123456');
+        expect(users.rotateTwoFactor).toHaveBeenCalledWith(user.id, 'NEXT', [
+          'hash1',
+          'hash2',
+        ]);
+        expect(users.enableTwoFactor).not.toHaveBeenCalled();
+      });
+
+      it('Given a code of the current app only, When confirming, Then it gets 401 and nothing rotates', async () => {
+        twoFactor.verifyTotpCode.mockImplementation(
+          (secret) => secret === 'ACTIVE',
+        );
+
+        await expect(
+          service.enableTwoFactor(reconfiguring(), 'good', '123456'),
+        ).rejects.toThrow(UnauthorizedException);
+        expect(users.rotateTwoFactor).not.toHaveBeenCalled();
+      });
+
+      it('Given a wrong password, When confirming, Then it gets 401 and nothing rotates', async () => {
+        password.verify.mockResolvedValue(false);
+
+        await expect(
+          service.enableTwoFactor(reconfiguring(), 'bad', '123456'),
+        ).rejects.toThrow(UnauthorizedException);
+        expect(users.rotateTwoFactor).not.toHaveBeenCalled();
+      });
     });
 
     it('Given 5 wrong passwords on change-password, When enabling 2FA with the right one, Then it gets 429: same per-account counter', async () => {

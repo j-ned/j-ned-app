@@ -311,5 +311,31 @@ describe('authentication', () => {
         true,
       );
     });
+
+    it('Given 2FA enabled, When it is reconfigured with a new app, Then the new backup codes replace the old ones', async () => {
+      const generated = await newVisitor().request('POST', '/api/auth/2fa/generate', { session });
+      const next = (generated.body as { secret: string }).secret;
+      expect(generated.status).toBe(200);
+      expect(next).not.toBe(secret);
+
+      const rotated = await newVisitor().request('POST', '/api/auth/2fa/enable', {
+        session,
+        json: { password: parityEnv().adminPassword, code: generateSync({ secret: next }) },
+      });
+      const previous = backupCodes;
+      backupCodes = (rotated.body as { backupCodes: string[] }).backupCodes;
+      secret = next;
+      expect(rotated.status).toBe(200);
+      expect(backupCodes).toHaveLength(10);
+
+      const answer = async (backupCode: string | undefined) => {
+        const { challengeToken } = (await login()).body as { challengeToken: string };
+        return newVisitor().request('POST', '/api/auth/2fa/verify', {
+          json: { challengeToken, backupCode },
+        });
+      };
+      expectApiError(await answer(previous[2]), 401);
+      expect((await answer(backupCodes[0])).status).toBe(200);
+    });
   });
 });
